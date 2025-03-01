@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage{amsmath}  % For mathematical symbols and equations
+\usepackage{amssymb}  % For additional math symbols
+\usepackage{graphicx} % For including images
+\usepackage{hyperref} % For hyperlinks
+
+\title{Notes on Quantitative Finance}
+\author{Ben Myers}
+\date{\today}
+
+\begin{document}
+
+\maketitle 
+
+\section{Introduction}
+
+In this section, we review fundamental mathematical concepts relevant to quantitative finance.
+
+\subsection{Difference of Squares}
+The difference of squares formula states:
+\begin{equation}
+    (a+b)(a-b) = a^2 - b^2.
+\end{equation}
+This identity is useful in various proofs and factorizations.
+
+\subsection{Example: Proof that 899 is Not a Prime Number}
+
+A prime number is a natural number greater than 1 that is only divisible by 1 and itself. To determine whether 899 is prime, we check if it has factors other than 1 and 899.
+
+\paragraph{Step 1: Choosing Close Factors}  
+We begin by approximating the square root of 899:
+\[
+\sqrt{899} \approx 30.
+\]
+We express 899 in the form of a difference of squares:
+\[
+899 = 30^2 - 1^2.
+\]
+Applying the identity:
+\[
+899 = (30 - 1)(30 + 1) = 29 \times 31.
+\]
+
+\paragraph{Step 2: Conclusion}  
+Since 899 can be expressed as a product of two integers greater than 1, it is not a prime number.
+
+\end{document}

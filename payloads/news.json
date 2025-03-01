@@ -1,0 +1,726 @@
+[
+    {
+        "id": "6b758084-4581-4fbc-9dc5-d38aeeb38e2a",
+        "content": {
+            "id": "6b758084-4581-4fbc-9dc5-d38aeeb38e2a",
+            "contentType": "STORY",
+            "title": "Nvidia's post-earnings reactions don't always align with the big picture: Morning Brief",
+            "description": "",
+            "summary": "Markets await Nvidia's quarterly results with bated breath. But the stock's move following the earnings report may not have much to say about what lies ahead.",
+            "pubDate": "2025-02-26T11:00:14Z",
+            "displayTime": "2025-02-26T11:00:14Z",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://s.yimg.com/os/creatr-uploaded-images/2025-02/c5b4f080-e8bc-11ef-b9f4-4212b39d7a7f",
+                "originalWidth": 4777,
+                "originalHeight": 3023,
+                "caption": "",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/59g.LFFGrzuGdy5Mi52iZw--~B/aD0zMDIzO3c9NDc3NzthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-02/c5b4f080-e8bc-11ef-b9f4-4212b39d7a7f",
+                        "width": 4777,
+                        "height": 3023,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/DO8IdQzHnhLLUSIj2kRbBA--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://s.yimg.com/os/creatr-uploaded-images/2025-02/c5b4f080-e8bc-11ef-b9f4-4212b39d7a7f",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Yahoo Finance",
+                "url": "http://finance.yahoo.com/"
+            },
+            "canonicalUrl": {
+                "url": "https://finance.yahoo.com/news/nvidias-post-earnings-reactions-dont-always-align-with-the-big-picture-morning-brief-110014201.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://finance.yahoo.com/news/nvidias-post-earnings-reactions-dont-always-align-with-the-big-picture-morning-brief-110014201.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": true
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": {
+                "storylineItems": [
+                    {
+                        "content": {
+                            "id": "e116b90e-799b-4d53-8b0c-eb25b0c455b0",
+                            "contentType": "STORY",
+                            "isHosted": true,
+                            "title": "Do traders think the stock market looks frothy and overvalued?",
+                            "thumbnail": {
+                                "originalUrl": "https://s.yimg.com/os/creatr-uploaded-images/2025-02/29a36820-f3c0-11ef-99d5-b30f9ba69449",
+                                "originalWidth": 3066,
+                                "originalHeight": 2388,
+                                "caption": "",
+                                "resolutions": null
+                            },
+                            "provider": {
+                                "displayName": "Yahoo Finance",
+                                "sourceId": "yahoofinance.com"
+                            },
+                            "previewUrl": null,
+                            "providerContentUrl": "",
+                            "canonicalUrl": {
+                                "url": "https://finance.yahoo.com/news/do-traders-think-the-stock-market-looks-frothy-and-overvalued-220152893.html"
+                            },
+                            "clickThroughUrl": {
+                                "url": "https://finance.yahoo.com/news/do-traders-think-the-stock-market-looks-frothy-and-overvalued-220152893.html"
+                            }
+                        }
+                    },
+                    {
+                        "content": {
+                            "id": "71dc48e3-9349-362f-a42a-afab477b37f3",
+                            "contentType": "VIDEO",
+                            "isHosted": true,
+                            "title": "Apple investors reject proposal to scrap company's DEI program",
+                            "thumbnail": {
+                                "originalUrl": "https://s.yimg.com/os/creatr-uploaded-images/2025-02/c23597d0-f3bf-11ef-b3df-c664bd5a3cd7",
+                                "originalWidth": 2478,
+                                "originalHeight": 1395,
+                                "caption": "",
+                                "resolutions": null
+                            },
+                            "provider": {
+                                "displayName": "Yahoo Finance Video",
+                                "sourceId": "video.yahoofinance.com"
+                            },
+                            "previewUrl": null,
+                            "providerContentUrl": "",
+                            "canonicalUrl": {
+                                "url": "https://finance.yahoo.com/video/apple-investors-reject-proposal-scrap-214231278.html"
+                            },
+                            "clickThroughUrl": {
+                                "url": "https://finance.yahoo.com/video/apple-investors-reject-proposal-scrap-214231278.html"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": "0aedf787-1cb8-4694-93b3-b69abc98ec8d",
+        "content": {
+            "id": "0aedf787-1cb8-4694-93b3-b69abc98ec8d",
+            "contentType": "STORY",
+            "title": "Apple investors back pro-DEI stance, setting up stark divide in Silicon Valley",
+            "description": "",
+            "summary": "Apple investors voted down a proposal to scrap the company's diversity, equity, and inclusion initiatives, backing the tech giant's efforts to push back against a DEI retreat that is taking hold elsewhere in Silicon Valley.",
+            "pubDate": "2025-02-25T17:47:35Z",
+            "displayTime": "2025-02-25T17:47:35Z",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://s.yimg.com/os/creatr-uploaded-images/2025-02/cf08b6f0-f39b-11ef-aeff-f6e44ae02201",
+                "originalWidth": 3000,
+                "originalHeight": 2000,
+                "caption": "",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/8.EOmFFs8JLgNo02KzA1SA--~B/aD0yMDAwO3c9MzAwMDthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-02/cf08b6f0-f39b-11ef-aeff-f6e44ae02201",
+                        "width": 3000,
+                        "height": 2000,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/c47fU0ie2Rd0qg2zXrRpOw--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://s.yimg.com/os/creatr-uploaded-images/2025-02/cf08b6f0-f39b-11ef-aeff-f6e44ae02201",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Yahoo Finance",
+                "url": "http://finance.yahoo.com/"
+            },
+            "canonicalUrl": {
+                "url": "https://finance.yahoo.com/news/apple-investors-back-pro-dei-stance-setting-up-stark-divide-in-silicon-valley-174735329.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://finance.yahoo.com/news/apple-investors-back-pro-dei-stance-setting-up-stark-divide-in-silicon-valley-174735329.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": true
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": {
+                "storylineItems": [
+                    {
+                        "content": {
+                            "id": "850bdd75-cdd2-3f7b-86eb-1b4450e8f1cb",
+                            "contentType": "VIDEO",
+                            "isHosted": true,
+                            "title": "Tesla, Apple's DEI vote, bitcoin declines: Market Minute",
+                            "thumbnail": {
+                                "originalUrl": "https://s.yimg.com/os/creatr-uploaded-images/2025-02/79a37290-f39b-11ef-9fdd-247f6cfba713",
+                                "originalWidth": 8256,
+                                "originalHeight": 4648,
+                                "caption": "",
+                                "resolutions": null
+                            },
+                            "provider": {
+                                "displayName": "Yahoo Finance Video",
+                                "sourceId": "video.yahoofinance.com"
+                            },
+                            "previewUrl": null,
+                            "providerContentUrl": "",
+                            "canonicalUrl": {
+                                "url": "https://finance.yahoo.com/video/tesla-apples-dei-vote-bitcoin-171650837.html"
+                            },
+                            "clickThroughUrl": {
+                                "url": "https://finance.yahoo.com/video/tesla-apples-dei-vote-bitcoin-171650837.html"
+                            }
+                        }
+                    },
+                    {
+                        "content": {
+                            "id": "389d6e4f-42d4-337e-9196-7f407ce451c1",
+                            "contentType": "VIDEO",
+                            "isHosted": true,
+                            "title": "Republican lawmakers are targeting these two CFPB rules",
+                            "thumbnail": {
+                                "originalUrl": "https://s.yimg.com/os/creatr-uploaded-images/2025-02/d0ac2dc0-f39b-11ef-bd76-d87a9eb8e691",
+                                "originalWidth": 4091,
+                                "originalHeight": 2302,
+                                "caption": "",
+                                "resolutions": null
+                            },
+                            "provider": {
+                                "displayName": "Yahoo Finance Video",
+                                "sourceId": "video.yahoofinance.com"
+                            },
+                            "previewUrl": null,
+                            "providerContentUrl": "",
+                            "canonicalUrl": {
+                                "url": "https://finance.yahoo.com/video/republican-lawmakers-targeting-two-cfpb-171333361.html"
+                            },
+                            "clickThroughUrl": {
+                                "url": "https://finance.yahoo.com/video/republican-lawmakers-targeting-two-cfpb-171333361.html"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "id": "76f49b18-059f-37df-baeb-fea9958aa84a",
+        "content": {
+            "id": "76f49b18-059f-37df-baeb-fea9958aa84a",
+            "contentType": "VIDEO",
+            "title": "Apple shareholders to decide fate of company DEI: What to know",
+            "description": "<p>Investors are set to vote on a proposal at Apple's (<a data-i13n=\"cpos:1;pos:1\" href=\"https://finance.yahoo.com/quote/AAPL\">AAPL</a>) shareholder meeting on Tuesday that challenges the company's diversity, equity, and inclusion (DEI) initiatives. The proposal comes from a conservative think tank called the National Center for Public Policy Research.</p>\n<p>Yahoo Finance Senior Legal Reporter <a data-i13n=\"cpos:2;pos:1\" href=\"https://finance.yahoo.com/author/alexis-keenan/\">Alexis Keenan</a> joins Catalysts hosts <a data-i13n=\"cpos:3;pos:1\" href=\"https://finance.yahoo.com/author/seana-smith/\">Seana Smith</a> and <a data-i13n=\"cpos:4;pos:1\" href=\"https://finance.yahoo.com/author/madison-mills/\">Madison Mills</a> to discuss the proposal and the larger effort to reconsider DEI initiatives across corporate America, citing financial and legal risks after recent Supreme Court rulings.</p>\n<p>This proposal follows similar efforts at other companies, including JPMorgan (<a data-i13n=\"cpos:5;pos:1\" href=\"https://finance.yahoo.com/quote/JPM\">JPM</a>), Goldman Sachs (<a data-i13n=\"cpos:6;pos:1\" href=\"https://finance.yahoo.com/quote/GS\">GS</a>), and Meta (<a data-i13n=\"cpos:7;pos:1\" href=\"https://finance.yahoo.com/quote/META\">META</a>), with varying responses from corporate America.</p>\n<p>To watch more expert insights and analysis on the latest market action, check out more Catalysts\u00a0<a data-i13n=\"cpos:8;pos:1\" href=\"https://finance.yahoo.com/videos/series/catalysts/\">here</a>.</p>\n<p><em>This post was written by Josh Lynch</em></p>",
+            "summary": "Investors are set to vote on a proposal at Apple's (AAPL) shareholder meeting on Tuesday that challenges the company's diversity, equity, and inclusion (DEI) initiatives. The proposal comes from a conservative think tank called the National Center for Public Policy Research. Yahoo Finance Senior Legal Reporter Alexis Keenan joins Catalysts hosts Seana Smith and Madison Mills to discuss the proposal and the larger effort to reconsider DEI initiatives across corporate America, citing financial and legal risks after recent Supreme Court rulings. This proposal follows similar efforts at other companies, including JPMorgan (JPM), Goldman Sachs (GS), and Meta (META), with varying responses from corporate America. To watch more expert insights and analysis on the latest market action, check out more Catalysts&nbsp;here. This post was written by Josh Lynch",
+            "pubDate": "2025-02-25T16:40:31Z",
+            "displayTime": "",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://s.yimg.com/os/creatr-uploaded-images/2025-02/c4efbd50-f394-11ef-bfef-782f5bce292b",
+                "originalWidth": 4741,
+                "originalHeight": 2667,
+                "caption": "",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/5c8jvAfOVBCYKq63M5rZzA--~B/aD0yNjY3O3c9NDc0MTthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-02/c4efbd50-f394-11ef-bfef-782f5bce292b",
+                        "width": 4741,
+                        "height": 2667,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/seEwwnqu7BRJ5l1yBVkr.g--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://s.yimg.com/os/creatr-uploaded-images/2025-02/c4efbd50-f394-11ef-bfef-782f5bce292b",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Yahoo Finance Video",
+                "url": "https://finance.yahoo.com/"
+            },
+            "canonicalUrl": {
+                "url": "https://finance.yahoo.com/video/apple-shareholders-decide-fate-company-164031768.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://finance.yahoo.com/video/apple-shareholders-decide-fate-company-164031768.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": true
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": null
+        }
+    },
+    {
+        "id": "966ecdc2-39bd-349e-bb8f-aa2e844f81a5",
+        "content": {
+            "id": "966ecdc2-39bd-349e-bb8f-aa2e844f81a5",
+            "contentType": "VIDEO",
+            "title": "Mag 7 nears correction territory ahead of Nvidia earnings",
+            "description": "<p>The Magnificent Seven \u2014 the group of tech stocks comprised of Alphabet (<a data-i13n=\"cpos:1;pos:1\" href=\"https://finance.yahoo.com/quote/GOOG\">GOOG</a>, <a data-i13n=\"cpos:2;pos:1\" href=\"https://finance.yahoo.com/quote/GOOGL\">GOOGL</a>), Apple (<a data-i13n=\"cpos:3;pos:1\" href=\"https://finance.yahoo.com/quote/AAPL\">AAPL</a>), Nvidia (<a data-i13n=\"cpos:4;pos:1\" href=\"https://finance.yahoo.com/quote/NVDA\">NVDA</a>), Tesla (<a data-i13n=\"cpos:5;pos:1\" href=\"https://finance.yahoo.com/quote/TSLA\">TSLA</a>), Amazon (<a data-i13n=\"cpos:6;pos:1\" href=\"https://finance.yahoo.com/quote/AMZN\">AMZN</a>), Meta Platforms (<a data-i13n=\"cpos:7;pos:1\" href=\"https://finance.yahoo.com/quote/META\">META</a>), and Microsoft (<a data-i13n=\"cpos:8;pos:1\" href=\"https://finance.yahoo.com/quote/MSFT\">MSFT</a>) \u2014 has dropped to a two-month low, falling nearly 9% since its December peak.</p>\n<p>Tesla, Microsoft, and Alphabet are among the biggest laggards, with Meta being the only stock in the green.</p>\n<p>Yahoo Finance's <a data-i13n=\"cpos:9;pos:1\" href=\"https://finance.yahoo.com/author/madison-mills/\">Madison Mills</a> joins Morning Brief hosts <a data-i13n=\"cpos:10;pos:1\" href=\"https://finance.yahoo.com/author/bradley-smith/\">Brad Smith</a> and <a data-i13n=\"cpos:11;pos:1\" href=\"https://finance.yahoo.com/author/seana-smith/\">Seana Smith</a> to discuss the Big Tech group nearing correction territory ahead of Nvidia's <a data-i13n=\"cpos:12;pos:1\" href=\"https://finance.yahoo.com/news/nvidia-to-report-q4-earnings-wednesday-as-tariff-export-control-threats-loom-090009145.html\">latest earnings report, due out Wednesday, February 26.</a></p>\n<p>To watch more expert insights and analysis on the latest market action, check out more Morning Brief\u00a0<a data-i13n=\"cpos:13;pos:1\" href=\"https://finance.yahoo.com/videos/series/morning-brief/\">here</a>.</p>\n<p>This post was written by Josh Lynch</p>",
+            "summary": "The Magnificent Seven \u2014 the group of tech stocks comprised of Alphabet (GOOG, GOOGL), Apple (AAPL), Nvidia (NVDA), Tesla (TSLA), Amazon (AMZN), Meta Platforms (META), and Microsoft (MSFT) \u2014 has dropped to a two-month low, falling nearly 9% since its December peak. Tesla, Microsoft, and Alphabet are among the biggest laggards, with Meta being the only stock in the green. Yahoo Finance's Madison Mills joins Morning Brief hosts Brad Smith and Seana Smith to discuss the Big Tech group nearing correction territory ahead of Nvidia's latest earnings report, due out Wednesday, February 26. To watch more expert insights and analysis on the latest market action, check out more Morning Brief&nbsp;here. This post was written by Josh Lynch",
+            "pubDate": "2025-02-25T15:35:00Z",
+            "displayTime": "",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://s.yimg.com/os/creatr-uploaded-images/2025-02/5128b240-f38b-11ef-b77f-580bba65a48f",
+                "originalWidth": 3660,
+                "originalHeight": 2061,
+                "caption": "",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/kLhUyW17YZ9awd0T2BX1mQ--~B/aD0yMDYxO3c9MzY2MDthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2025-02/5128b240-f38b-11ef-b77f-580bba65a48f",
+                        "width": 3660,
+                        "height": 2061,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/L6AAhczKHci1s4tYvmExfA--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://s.yimg.com/os/creatr-uploaded-images/2025-02/5128b240-f38b-11ef-b77f-580bba65a48f",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Yahoo Finance Video",
+                "url": "https://finance.yahoo.com/"
+            },
+            "canonicalUrl": {
+                "url": "https://finance.yahoo.com/video/mag-7-nears-correction-territory-153500126.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://finance.yahoo.com/video/mag-7-nears-correction-territory-153500126.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": true
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": null
+        }
+    },
+    {
+        "id": "15f00526-d229-3304-8290-306f9d26616b",
+        "content": {
+            "id": "15f00526-d229-3304-8290-306f9d26616b",
+            "contentType": "STORY",
+            "title": "Apple Inc. (AAPL): Among the Best Fortune 500 Stocks to Buy According to Hedge Funds",
+            "description": "",
+            "summary": "We recently compiled a list of the 12 Best Fortune 500 Stocks To Buy According to Hedge Funds. In this article, we are going to take a look at where Apple Inc. (NASDAQ:AAPL) stands against the other best Fortune 500 stocks. The Fortune 500 list includes companies that generate the highest revenue in the United States. [\u2026]",
+            "pubDate": "2025-02-26T14:03:46Z",
+            "displayTime": "2025-02-26T14:03:46Z",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://media.zenfs.com/en/insidermonkey.com/bd47dc2e86b4a3086f845d200d9daf1f",
+                "originalWidth": 1456,
+                "originalHeight": 816,
+                "caption": "Apple (AAPL) Introduces AI-Powered Features to Vision Pro, Expanding Spatial Computing",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/fTPNobtT0bdcSxj2xXAamw--~B/aD04MTY7dz0xNDU2O2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/insidermonkey.com/bd47dc2e86b4a3086f845d200d9daf1f",
+                        "width": 1456,
+                        "height": 816,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/ERk7UFMt6k8ofjYa8ja0kw--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://media.zenfs.com/en/insidermonkey.com/bd47dc2e86b4a3086f845d200d9daf1f",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Insider Monkey",
+                "url": "http://www.insidermonkey.com"
+            },
+            "canonicalUrl": {
+                "url": "https://finance.yahoo.com/news/apple-inc-aapl-among-best-140346608.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://finance.yahoo.com/news/apple-inc-aapl-among-best-140346608.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": false
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": null
+        }
+    },
+    {
+        "id": "7bf6d32f-9997-3da1-bc27-dceea4f94afd",
+        "content": {
+            "id": "7bf6d32f-9997-3da1-bc27-dceea4f94afd",
+            "contentType": "STORY",
+            "title": "OpenAI Just Gave Taiwan Semiconductor Investors Great News",
+            "description": "",
+            "summary": "OpenAI is collaborating with Taiwan Semi for its own custom chips.",
+            "pubDate": "2025-02-26T13:15:00Z",
+            "displayTime": "2025-02-26T13:15:00Z",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://media.zenfs.com/en/motleyfool.com/6fd59f3ee6e8e8b2da9ecd07a83c6783",
+                "originalWidth": 1400,
+                "originalHeight": 888,
+                "caption": "A person working in a chip foundry.",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/ZZa4AhC0nd_FxCEC36o41Q--~B/aD04ODg7dz0xNDAwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/motleyfool.com/6fd59f3ee6e8e8b2da9ecd07a83c6783",
+                        "width": 1400,
+                        "height": 888,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/qbQGvAUWl36_FGpH1wo5AQ--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://media.zenfs.com/en/motleyfool.com/6fd59f3ee6e8e8b2da9ecd07a83c6783",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Motley Fool",
+                "url": "http://www.fool.com/"
+            },
+            "canonicalUrl": {
+                "url": "https://www.fool.com/investing/2025/02/26/openai-just-gave-taiwan-semiconductor-investors/?source=eptyholnk0000202&utm_source=yahoo-host-full&utm_medium=feed&utm_campaign=article&referring_guid=08059ad0-f6b9-4fc9-9b52-61242a5d66fa",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://finance.yahoo.com/news/openai-just-gave-taiwan-semiconductor-131500167.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": false
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": null
+        }
+    },
+    {
+        "id": "208f0b4d-a041-311e-a4b8-367a4e50e71a",
+        "content": {
+            "id": "208f0b4d-a041-311e-a4b8-367a4e50e71a",
+            "contentType": "STORY",
+            "title": "Apple Leads AI-PC Market as Mac Sales Surge, Canalys Reports",
+            "description": "",
+            "summary": "Apple dominates AI-capable PC shipments, expanding Mac market share while Lenovo and HP compete with Intel, AMD, and Qualcomm chips",
+            "pubDate": "2025-02-26T13:14:18Z",
+            "displayTime": "2025-02-26T13:14:18Z",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://media.zenfs.com/en/us.finance.gurufocus/1a4a9d6af83a8cd2d0760f4f7fd9eba9",
+                "originalWidth": 1960,
+                "originalHeight": 1568,
+                "caption": "",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/pZH7Xl8CfazTgubtkYn8cA--~B/aD0xNTY4O3c9MTk2MDthcHBpZD15dGFjaHlvbg--/https://media.zenfs.com/en/us.finance.gurufocus/1a4a9d6af83a8cd2d0760f4f7fd9eba9",
+                        "width": 1960,
+                        "height": 1568,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/iLzpr731dNC5uPlBS51COw--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://media.zenfs.com/en/us.finance.gurufocus/1a4a9d6af83a8cd2d0760f4f7fd9eba9",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "GuruFocus.com",
+                "url": "http://www.gurufocus.com/"
+            },
+            "canonicalUrl": {
+                "url": "https://finance.yahoo.com/news/apple-leads-ai-pc-market-131418289.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://finance.yahoo.com/news/apple-leads-ai-pc-market-131418289.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": false
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": null
+        }
+    },
+    {
+        "id": "09725f22-c4a4-35f3-9012-09cb71cbc2a1",
+        "content": {
+            "id": "09725f22-c4a4-35f3-9012-09cb71cbc2a1",
+            "contentType": "STORY",
+            "title": "Trump asks Apple to end diversity policies after shareholders vote in favor",
+            "description": "",
+            "summary": "U.S. President Donald Trump on Wednesday urged Apple to scrap its diversity, equity and inclusion policies, a day after the iPhone maker's shareholders voted overwhelmingly to keep them in the face of growing pushback from conservative groups.  Big U.S. companies, including Meta and Alphabet, have dropped DEI initiatives as Trump's returned to the presidency.  He has called them discriminatory and suggested the Department of Justice could investigate if such efforts violate the law.",
+            "pubDate": "2025-02-26T13:12:06Z",
+            "displayTime": "2025-02-26T13:12:06Z",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://media.zenfs.com/en/reuters-finance.com/f6c6c02dedd8bc71384b4e1a9fcc0bc0",
+                "originalWidth": 800,
+                "originalHeight": 532,
+                "caption": "FILE PHOTO: Apple logo at an Apple store in Paris",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/z265lcr2x6QFgDG0MRcJ8g--~B/aD01MzI7dz04MDA7YXBwaWQ9eXRhY2h5b24-/https://media.zenfs.com/en/reuters-finance.com/f6c6c02dedd8bc71384b4e1a9fcc0bc0",
+                        "width": 800,
+                        "height": 532,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/WPQ_QGS3_n6urltKnVldoA--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://media.zenfs.com/en/reuters-finance.com/f6c6c02dedd8bc71384b4e1a9fcc0bc0",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Reuters",
+                "url": "http://www.reuters.com/"
+            },
+            "canonicalUrl": {
+                "url": "https://www.yahoo.com/news/trump-says-apple-eliminate-diversity-131206817.html",
+                "site": "news",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://www.yahoo.com/news/trump-says-apple-eliminate-diversity-131206817.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": false
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": null
+        }
+    },
+    {
+        "id": "86e8f38f-bcee-3c4a-89e3-c510bc5348d7",
+        "content": {
+            "id": "86e8f38f-bcee-3c4a-89e3-c510bc5348d7",
+            "contentType": "STORY",
+            "title": "Apple to fix iPhone dictation glitch that suggests replacing the word 'racist' with 'Trump'",
+            "description": "",
+            "summary": "Apple is fixing a bug within the dictation feature on some iPhones that briefly suggests the word \u201cTrump\u201d when a word with an R consonant is spoken, including \"racist.\"  When users activated the dictation feature and said the word \u201cracist,\u201d the word \u201cTrump\u201d appears in the text window before quickly being replaced by the correct word, according to various videos posted online.  \u201cWe are aware of an issue with the speech recognition model that powers Dictation and we are rolling out a fix today,\u201d Apple said in a statement sent to The Associated Press on Wednesday.",
+            "pubDate": "2025-02-26T13:07:13Z",
+            "displayTime": "2025-02-26T13:07:13Z",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://media.zenfs.com/en/ap_finance_articles_694/3a990a3fc215263f11d78cc2ed61d93f",
+                "originalWidth": 5670,
+                "originalHeight": 3780,
+                "caption": "FILE - This is a display of iPhone 16s in an Apple Store in Pittsburgh on Jan. 12, 2025. (AP Photo/Gene J. Puskar, File)",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/HMNGijRyNODTmYtRg5Rl3g--~B/aD0zNzgwO3c9NTY3MDthcHBpZD15dGFjaHlvbg--/https://media.zenfs.com/en/ap_finance_articles_694/3a990a3fc215263f11d78cc2ed61d93f",
+                        "width": 5670,
+                        "height": 3780,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/8_azZNgF4y0aKBlmMAyY1g--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://media.zenfs.com/en/ap_finance_articles_694/3a990a3fc215263f11d78cc2ed61d93f",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Associated Press Finance",
+                "url": "http://www.ap.org/"
+            },
+            "canonicalUrl": {
+                "url": "https://www.yahoo.com/tech/apple-fix-iphone-dictation-glitch-130713594.html",
+                "site": "tech",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://www.yahoo.com/tech/apple-fix-iphone-dictation-glitch-130713594.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": false
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": null
+        }
+    },
+    {
+        "id": "6b235e1d-a971-3aaf-8cbd-70f3a4712b19",
+        "content": {
+            "id": "6b235e1d-a971-3aaf-8cbd-70f3a4712b19",
+            "contentType": "STORY",
+            "title": "Dassault Syst\u00e8mes and Apple to bring 3D software to Vision Pro",
+            "description": "",
+            "summary": "With 3DLive, virtual twins created on the 3DEXPERIENCE platform can transition from the screen into a user's physical space.",
+            "pubDate": "2025-02-26T12:52:53Z",
+            "displayTime": "2025-02-26T12:52:53Z",
+            "isHosted": true,
+            "bypassModal": false,
+            "previewUrl": null,
+            "thumbnail": {
+                "originalUrl": "https://media.zenfs.com/en/verdict_626/4e61af95c535ed4e4d0ccae055f0fa62",
+                "originalWidth": 1440,
+                "originalHeight": 810,
+                "caption": "For enterprise customers",
+                "resolutions": [
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/u4IFl5fkrCUnUuwnm5sevw--~B/aD04MTA7dz0xNDQwO2FwcGlkPXl0YWNoeW9u/https://media.zenfs.com/en/verdict_626/4e61af95c535ed4e4d0ccae055f0fa62",
+                        "width": 1440,
+                        "height": 810,
+                        "tag": "original"
+                    },
+                    {
+                        "url": "https://s.yimg.com/uu/api/res/1.2/F5VlYOvp5uROvpyzgLO.3A--~B/Zmk9c3RyaW07aD0xMjg7dz0xNzA7YXBwaWQ9eXRhY2h5b24-/https://media.zenfs.com/en/verdict_626/4e61af95c535ed4e4d0ccae055f0fa62",
+                        "width": 170,
+                        "height": 128,
+                        "tag": "170x128"
+                    }
+                ]
+            },
+            "provider": {
+                "displayName": "Verdict",
+                "url": "https://www.globaldata.com/"
+            },
+            "canonicalUrl": {
+                "url": "https://www.verdict.co.uk/dassault-systemes-apple-vision-pro/",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "clickThroughUrl": {
+                "url": "https://finance.yahoo.com/news/dassault-syst-mes-apple-bring-125253296.html",
+                "site": "finance",
+                "region": "US",
+                "lang": "en-US"
+            },
+            "metadata": {
+                "editorsPick": false
+            },
+            "finance": {
+                "premiumFinance": {
+                    "isPremiumNews": false,
+                    "isPremiumFreeNews": false
+                }
+            },
+            "storyline": null
+        }
+    }
+]
