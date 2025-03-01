@@ -15,34 +15,34 @@ class Bot:
         self.data = self.fetch_data()
         self.indicatordata = self.calculate_indicators()
 
-    def calculate_relative_minima(self, rsis):
-        """Calculate the relative minima of the RSI"""
-
-        if 'RSI' not in rsis:
-            return None
-            
-        # Invert RSI to find minima (find_peaks looks for maxima by default)
-        inverted_rsi = -1 * rsis
-        
-        # Find peaks of the inverted RSI (which are minima of the original RSI)
-        # Adjust the prominence and distance parameters to control sensitivity
-        peaks, _ = find_peaks(inverted_rsi, prominence=5, distance=5)
-        
-        relative_minima = []
-        for peak in peaks:
-            relative_minima.append(rsis[peak])
-        
-        # Find the minimum of the relative minima
-        minimum = min(relative_minima)
-        return minimum
-
     def fetch_data(self):
         # Get the data from yfinance
         data = Yfetch(self.ticker, self.period, self.interval)
         df = data.get_chart_dataframe()
-        print(df)   
         return df
     
+    def rsi_buy_signal(self, indicatordata, i):
+        if indicatordata['RSI'][i] < 40:
+            return True
+        
+    
+    def rsi_sell_signal(self, indicatordata, i):
+        if indicatordata['RSI'][i] > 70:
+            return True
+    
+    # Write a function that returns true or false
+    def macd_buy_signal(self, indicatordata, i):
+        # First check if the the macd signal and macd are both less than 0.01
+        if indicatordata['MACD_signal'][i] < 0 and indicatordata['MACD'][i] < 0:
+            if indicatordata['MACD_buy_signal'][i] == True and indicatordata['MACD_buy_signal'][i-1] == False:
+                return True
+            
+    def macd_sell_signal(self, indicatordata, i):
+        # First check if there was already a buy signal at or before this index
+        if indicatordata['MACD_buy_signal'][i] == False and indicatordata['MACD_buy_signal'][i-1] == True:
+            # Check if there is a buy signal at or before this index
+            return True
+        
     def calculate_indicators(self):
 
         indicatordata = {}
@@ -70,12 +70,9 @@ class Bot:
         buy_coords = []
         sell_coords = []
         for i in range(1, len(indicatordata['MACD_buy_signal'])):
-            # Find the relative minimum of the RSI at this index
-            rsi_min = self.calculate_relative_minima(indicatordata['RSI'])
-            print(rsi_min)
-            if indicatordata['MACD_buy_signal'][i] == True and indicatordata['MACD_buy_signal'][i-1] == False:
+            if self.macd_buy_signal(indicatordata, i) and self.rsi_buy_signal(indicatordata, i):
                 buy_coords.append((self.data.index[i], self.data['Close'].iloc[i]))
-            elif indicatordata['MACD_buy_signal'][i] == False and indicatordata['MACD_buy_signal'][i-1] == True:
+            elif self.macd_sell_signal(indicatordata, i) and self.rsi_sell_signal(indicatordata, i):
                 sell_coords.append((self.data.index[i], self.data['Close'].iloc[i]))
 
         indicatordata['buy_coords'] = buy_coords
@@ -85,7 +82,7 @@ class Bot:
 
     
 
-    def plot_graphs(self):
+    def plot_graphs(self, ticker):
         fig, axs = plt.subplots(3, 1, figsize=(9, 10), sharex=True)
         
         axs[0].plot(self.data.index, self.data['Close'], label='Price')
@@ -111,12 +108,20 @@ class Bot:
         plt.xticks(self.data.index[::step], rotation=45)
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.show()
+        # Download as high dpi png
+        plt.savefig('stockgraphs/' + ticker + '_graph.png', dpi=300)
+        # plt.show()
 
 
     
 # Test the class
 if __name__ == "__main__":
-    bot = Bot("NVDA")
-    bot.plot_graphs()
+
+    tickers = ["PRGO"
+    ]
+
+    # Test on all the tickers
+    for ticker in tickers:
+        bot = Bot(ticker)
+        bot.plot_graphs(ticker)
 
