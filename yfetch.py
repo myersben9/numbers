@@ -1,18 +1,24 @@
 import requests
 from constants import Constants
 from chartparse import ChartParse
-from typing import Dict, Optional, List, Any
-import json
+from typing import Dict, Optional, List, Any, Tuple
 import pandas as pd
 
 class Yfetch:
-    def __init__(self, symbol: str, range: str = "5m", interval: Optional[str] = None):
+    def __init__(self, 
+                 symbol: str, 
+                 range: str = "5m", 
+                 interval: Optional[str] = None,
+                 pre_post: bool = False):
         self.symbol = symbol
         self.range = range
+        self.pre_post = pre_post
         self.interval = interval
         self._news = None
 
-    def _get_request(self, endpoint: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _get_request(self, 
+                     endpoint: str, 
+                     params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Perform a GET request to the specified endpoint with given parameters."""
         try:
             response = requests.get(endpoint, headers=Constants._HEADERS, params=params)
@@ -22,7 +28,9 @@ class Yfetch:
             print(f"GET request failed: {e}")
             return None
 
-    def _post_request(self, endpoint: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _post_request(self, 
+                      endpoint: str, 
+                      data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Perform a POST request to the specified endpoint with given data."""
         try:
             response = requests.post(endpoint, headers=Constants._HEADERS, json=data)
@@ -54,7 +62,9 @@ class Yfetch:
         news = data.get("data", {}).get("tickerStream", {}).get("stream", [])
         return [article for article in news if not article.get('ad', [])]
 
-    def get_news(self, count: int = 10, tab: str = "news") -> List[Dict[str, Any]]:
+    def get_news(self, 
+                 count: int = 10, 
+                 tab: str = "news") -> List[Dict[str, Any]]:
         """Fetch news articles specific to the ticker."""
         if self._news:
             return self._news
@@ -82,11 +92,16 @@ class Yfetch:
         return self._news
 
     def get_chart_dataframe(self) -> pd.DataFrame:
-        """Fetch chart data and return it as a DataFrame."""
+        """
+        Fetch chart data and return it as a DataFrame.
+        Returns:
+            pd.DataFrame: A DataFrame containing the chart data.
+        """
         chart_url = self._build_chart_url()
         params = {
             'range': self.range,
-            'interval': self.interval
+            'interval': self.interval,
+            'includePrePost': self.pre_post
         }
         response = self._get_request(chart_url, params)
         chart_parse = ChartParse(response)
@@ -94,7 +109,7 @@ class Yfetch:
 
 # Example usage
 if __name__ == "__main__":
-    yfetch_instance = Yfetch(symbol="AAPL", range="1d", interval="1m")
+    yfetch_instance = Yfetch(symbol="AAPL", range="1d", interval="1m", pre_post=False)
     # Get the dataframe
     df = yfetch_instance.get_chart_dataframe()
     print(df)

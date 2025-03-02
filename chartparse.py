@@ -2,27 +2,29 @@
 # Parse a payload like payloads/apple_chart.json and return the quotes/indicates
 # as a dataframe
 import pandas as pd
-import datetime
+from typing import Dict, Any, Tuple
+# Make sure tz_localize is typed
+
 
 class ChartParse:
-    def __init__(self, payload):
+    def __init__(self: 'ChartParse', payload: Dict[str, Any]) -> None:
         self.payload = payload
 
-    def get_dataframe(self) -> pd.DataFrame:
+    def get_dataframe(self: 'ChartParse') -> pd.DataFrame | Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Parses the Yahoo Finance chart payload and returns the data as a DataFrame.
         Returns a DataFrame with timestamp as index and OHLCV data as columns.
         """
         # Extract the relevant data from the payload
-        chart_data = self.payload['chart']['result'][0]
         
-        # Get timestamps
-        timestamps = chart_data['timestamp']
-        
-        # Get quote data
-        quotes = chart_data['indicators']['quote'][0]
-        
-        # Extract OHLCV data
+        try:
+            chart_data = self.payload['chart']['result'][0]
+            quotes = chart_data['indicators']['quote'][0]
+            timestamps = chart_data['timestamp']
+        except:
+            # Return an empty dataframe with the correct columns
+            return pd.DataFrame(columns=['Open', 'High', 'Low', 'Close', 'Volume'], index=pd.to_datetime([]))
+
         opens = quotes.get('open', [])
         highs = quotes.get('high', [])
         lows = quotes.get('low', [])
@@ -39,19 +41,10 @@ class ChartParse:
         })
         
         # Convert timestamps to datetime and set as index
-
         df.index = pd.to_datetime(timestamps, unit='s')
-        # Put timestamps as pst datetime objects
-        df.index = df.index.tz_localize('UTC').tz_convert('US/Pacific')
-        df.index = df.index.strftime('%H:%M')
         df.index.name = 'Timestamp'
         # drop rows with nan values
         df = df.dropna()
-        
-        # Add metadata as attributes to the DataFrame
-        if 'meta' in chart_data:
-            for key, value in chart_data['meta'].items():
-                df.attrs[key] = value
-        
-        return df 
+        return df
+
     

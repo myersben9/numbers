@@ -22,11 +22,15 @@ class Bot:
     # Signal functions
     def rsi_buy_signal(self, indicatordata, i):
         # Buy if RSI is below 40
-        return indicatordata['RSI'][i] < 40
+        if indicatordata['RSI'][i] < 40 and indicatordata['RSI'][i] > 30:
+            return True
+        return False
 
     def rsi_sell_signal(self, indicatordata, i):
         # Sell if RSI is above 70
-        return indicatordata['RSI'][i] > 70
+        if indicatordata['RSI'][i] > 60 and indicatordata['RSI'][i] < 70:
+            return True
+        return False
 
     def macd_buy_signal(self, indicatordata, i):
         # Check for a MACD crossover: current bar is bullish and previous bar was not
