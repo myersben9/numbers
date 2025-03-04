@@ -1,0 +1,2 @@
+total_trades,profitable_trades,total_profit,best_trade_symbol,best_trade_date,best_trade_profit_percent,worst_trade_symbol,worst_trade_date,worst_trade_profit_percent,overall_win_rate (%),overall_average_profit
+346,200,53.987884759902954,LTRY,2025-02-06,110.29082889395023,LTRY,2025-02-21,-20.28571537562779,57.80346820809249,0.15603434901706056

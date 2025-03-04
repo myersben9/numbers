@@ -1,5 +1,3 @@
-
-
 from yfetch import Yfetch
 from movers import TopMovers
 from matplotlib.dates import DateFormatter
@@ -20,24 +18,94 @@ import numpy as np
 from typing import Dict, List, Tuple, Any
 
 class Bot:
-    def __init__(self: 'Bot', ticker: str, pre_post: bool = False, time_zone: str = 'America/Los_Angeles') -> None:
+    def __init__(self: 'Bot', 
+                 ticker: str, 
+                 pre_post: bool = False,
+                 start_date: str = None,
+                 end_date: str = None,
+                 time_zone: str = 'America/Los_Angeles') -> None:
         self.ticker: str = ticker # type: str
         self.period: str = "1d" # type: str
         self.interval: str = "1m" # type: str
         self.pre_post: bool = pre_post # type: bool
+        self.start_date: str = start_date # type: str
+        self.end_date: str = end_date # type: str
         self.time_zone: str = time_zone # type: str
         self.data: pd.DataFrame = self.fetch_data() # type: pd.DataFrame | None
         self.indicatordata: Dict[str, Any] = self.calculate_indicators() # type: Dict[str, Any] | None
 
     def fetch_data(self: 'Bot') -> pd.DataFrame:
         # Get the data from yfinance
-        
-        data = Yfetch(self.ticker, 
-                      self.period, 
-                      self.interval, 
-                      self.pre_post)
+        if self.start_date and self.end_date:
+            data = Yfetch(self.ticker, 
+                          interval = self.interval, 
+                          pre_post = self.pre_post,
+                          start_date = self.start_date,
+                          end_date = self.end_date,
+                          timezone = self.time_zone)
+        elif self.period:
+            data = Yfetch(self.ticker, 
+                          period = self.period, 
+                          interval = self.interval, 
+                          timezone = self.time_zone)
+        else:
+            raise ValueError("Invalid parameters")
         df = data.get_chart_dataframe()
         return df
+    
+    def calculate_stop_loss(self, entry_price: float, atr_value: float, multiplier: float = 1.5) -> float:
+        """
+        Calculate a stop loss price based on the entry price and a multiple of the ATR.
+        For a long trade, the stop loss is placed below the entry.
+        """
+        return entry_price - atr_value * multiplier
+    
+    def calculate_take_profit(self, entry_price: float, atr_value: float, multiplier: float = 1.5) -> float:
+        """
+        Calculate a take profit price based on the entry price and a multiple of the ATR.
+        For a long trade, the take profit is placed above the entry.
+        """
+        return entry_price + atr_value * multiplier
+    
+    def is_exit_condition(self, indicatordata: pd.DataFrame, i: int) -> bool:
+        """
+        Return True if any of the exit conditions are met.
+        (Using OR logic for increased sensitivity.)
+        """
+        return (
+            self.macd_sell_signal(indicatordata, i) or
+            self.rsi_sell_signal(indicatordata, i) or
+            self.bollinger_sell_signal(indicatordata, i) or
+            self.extra_sell_filter(indicatordata, i)
+        )
+    
+    def simulate_trade_exit_combined(self, entry_index: int, sl_multiplier: float = 1.5, tp_multiplier: float = 2.0) -> Tuple[pd.Timestamp, float]:
+        """
+        Scan forward from the entry_index and exit the trade at the first occurrence of either:
+          - any indicator-based sell signal (MACD, RSI, Bollinger, or extra sell filter), or
+          - if the price reaches the stop loss or take profit levels.
+        If neither condition is met, exit at the last available price.
+        """
+        entry_price = self.data['Close'].iloc[entry_index]
+        atr_value = self.indicatordata['ATR'].iloc[entry_index]
+        stop_loss = self.calculate_stop_loss(entry_price, atr_value, sl_multiplier)
+        take_profit = self.calculate_take_profit(entry_price, atr_value, tp_multiplier)
+        
+        # Loop over subsequent minutes
+        for i in range(entry_index + 1, len(self.data)):
+            current_time = self.data.index[i]
+            current_low = self.data['Low'].iloc[i]
+            current_high = self.data['High'].iloc[i]
+            
+            # Check indicator-based sell signal (using OR logic)
+            indicator_sell = self.is_exit_condition(self.indicatordata, i)
+            if indicator_sell:
+                return current_time, self.data['Close'].iloc[i]
+            if current_low <= stop_loss:
+                return current_time, stop_loss
+            if current_high >= take_profit:
+                return current_time, take_profit
+        return self.data.index[-1], self.data['Close'].iloc[-1]
     
     def parkinsons_volatility(self: 'Bot', high: pd.Series, low: pd.Series, window: int = 20) -> pd.Series:
         log_hl = np.log(high / low)  # Log of High/Low ratio
@@ -45,61 +113,172 @@ class Bot:
         k = 1 / (4 * np.log(2) * window)
         return np.sqrt(k * squared_term.rolling(window=window).sum())
 
-    def bollinger_buy_signal(self, indicatordata: pd.DataFrame, i: int, tolerance: float = 0.15) -> bool:
+    def dynamic_tolerance(self, indicatordata: pd.DataFrame, i: int, base_tolerance: float = 0.15) -> float:
         """
-        Returns True if the current close is near (within a tolerance) the lower Bollinger band.
+        Calculate a dynamic tolerance for Bollinger signals based on current ATR relative to its average.
         """
+        avg_atr = indicatordata['ATR'].mean()
+        current_atr = indicatordata['ATR'].iloc[i]
+        # Increase tolerance when current ATR is higher than average (i.e., market is more volatile)
+        return base_tolerance * (current_atr / avg_atr)
+
+    def bollinger_buy_signal(self, indicatordata: pd.DataFrame, i: int, base_tolerance: float = 0.15) -> bool:
+        """
+        Returns True if the current close is near (within a dynamic tolerance) the lower Bollinger band.
+        """
+        tol = self.dynamic_tolerance(indicatordata, i, base_tolerance)
         price = self.data['Close'].iloc[i]
-        lower_band = indicatordata['Bollinger_lband'][i]
-        return price <= lower_band * (1 + tolerance)
+        lower_band = indicatordata['Bollinger_lband'].iloc[i]
+        return price <= lower_band * (1 + tol)
 
-    def bollinger_sell_signal(self, indicatordata: pd.DataFrame, i: int, tolerance: float = 0.15) -> bool:
+    def bollinger_sell_signal(self, indicatordata: pd.DataFrame, i: int, base_tolerance: float = 0.15) -> bool:
         """
-        Returns True if the current close is near (within a tolerance) the upper Bollinger band.
+        Returns True if the current close is near (within a dynamic tolerance) the upper Bollinger band.
         """
+        tol = self.dynamic_tolerance(indicatordata, i, base_tolerance)
         price = self.data['Close'].iloc[i]
-        upper_band = indicatordata['Bollinger_hband'][i]
-        return price >= upper_band * (1 - tolerance)
+        upper_band = indicatordata['Bollinger_hband'].iloc[i]
+        return price >= upper_band * (1 - tol)
 
-    def atr_buy_signal(self, indicatordata: pd.DataFrame, i: int, atr_threshold: float = 3) -> bool:
+    def atr_buy_signal(self, indicatordata: pd.DataFrame, i: int) -> bool:
         """
-        Returns True if the ATR is below a given threshold.
+        Returns True if the current ATR is below a dynamic threshold (indicating relatively calm conditions).
         """
-        return indicatordata['ATR'][i] < atr_threshold
+        avg_atr = indicatordata['ATR'].mean()
+        current_atr = indicatordata['ATR'].iloc[i]
+        # For example, if the current ATR is less than 80% of the average, it indicates a lower volatility environment.
+        return current_atr < avg_atr * 0.8
 
-    def parkinsons_buy_signal(self, indicatordata: pd.DataFrame, i: int, parkinson_threshold: float = 0.15) -> bool:
+    def parkinsons_buy_signal(self, indicatordata: pd.DataFrame, i: int) -> bool:
         """
-        Returns True if Parkinson's volatility is below a given threshold.
+        Returns True if the current Parkinson's volatility is below a dynamic threshold.
         """
-        return indicatordata['Parkinsons_Volatility'][i] < parkinson_threshold
+        avg_parkinson = indicatordata['Parkinsons_Volatility'].mean()
+        current_parkinson = indicatordata['Parkinsons_Volatility'].iloc[i]
+        # Signal buy if current Parkinson's volatility is less than 80% of its average.
+        return current_parkinson < avg_parkinson * 0.8
 
-        
-    def rsi_buy_signal(self: 'Bot', indicatordata: pd.DataFrame, i: int) -> bool:
-        # Buy if RSI is below 40
-        if indicatordata['RSI'][i] < 40:
-            return True
-        return False
+    def rsi_buy_signal(self, indicatordata: pd.DataFrame, i: int) -> bool:
+    # Adjusted RSI threshold for buy (e.g., allow RSI up to 45 instead of 40)
+        current_atr = indicatordata['ATR'].iloc[i]
+        avg_atr = indicatordata['ATR'].mean()
+        threshold = 40 if current_atr <= avg_atr else 45
+        return indicatordata['RSI'].iloc[i] < threshold
 
-    def rsi_sell_signal(self: 'Bot', indicatordata: pd.DataFrame, i: int) -> bool:
-        # Sell if RSI is between 60 and 70
-        if indicatordata['RSI'][i] > 60: 
-            return True
-        return False
-    
-    # Write a function that returns true or false
-    def macd_buy_signal(self: 'Bot', indicatordata: pd.DataFrame, i: int) -> bool:
-        # First check if the the macd signal and macd are both less than 0.01
-        if indicatordata['MACD_signal'][i] < 0 and indicatordata['MACD'][i] < 0:
-            if indicatordata['MACD_buy_signal'][i] == True and indicatordata['MACD_buy_signal'][i-1] == False:
+    def rsi_sell_signal(self, indicatordata: pd.DataFrame, i: int) -> bool:
+        # Adjusted RSI threshold for sell (e.g., allow RSI above 55 instead of 60)
+        current_atr = indicatordata['ATR'].iloc[i]
+        avg_atr = indicatordata['ATR'].mean()
+        threshold = 60 if current_atr <= avg_atr else 55
+        return indicatordata['RSI'].iloc[i] > threshold
+
+    def macd_buy_signal(self, indicatordata: pd.DataFrame, i: int) -> bool:
+        # Using the crossover approach (ensure only one definition exists)
+        current_atr = indicatordata['ATR'].iloc[i]
+        avg_atr = indicatordata['ATR'].mean()
+        if current_atr > avg_atr * 1.5:
+            return False
+        if indicatordata['MACD'].iloc[i] < 0 and indicatordata['MACD_signal'].iloc[i] < 0.01:
+            if indicatordata['MACD_buy_signal'][i] and not indicatordata['MACD_buy_signal'][i-1]:
                 return True
         return False
-    
-    def macd_sell_signal(self: 'Bot', indicatordata: pd.DataFrame, i: int) -> bool:
-        # First check if there was already a buy signal at or before this index
-        if indicatordata['MACD_buy_signal'][i] == False and indicatordata['MACD_buy_signal'][i-1] == True:
+
+    def macd_sell_signal(self, indicatordata: pd.DataFrame, i: int) -> bool:
+        current_atr = indicatordata['ATR'].iloc[i]
+        avg_atr = indicatordata['ATR'].mean()
+        if current_atr > avg_atr * 1.5:
+            return False
+        if not indicatordata['MACD_buy_signal'][i] and indicatordata['MACD_buy_signal'][i-1]:
             return True
         return False
     
+    def extra_buy_filter(self, indicatordata: pd.DataFrame, i: int) -> bool:
+        """
+        Extra buy filter: Require that the current price is above the 20-period SMA.
+        You can adjust this logic to include other trend conditions.
+        """
+        # Ensure SMA value is not NaN
+        sma_value = indicatordata['SMA20'].iloc[i]
+        if pd.isna(sma_value):
+            return False
+        return self.data['Close'].iloc[i] > sma_value
+
+    def extra_sell_filter(self, indicatordata: pd.DataFrame, i: int) -> bool:
+        """
+        Extra sell filter: Require that the current price is below the 20-period SMA.
+        Modify as needed for additional exit criteria.
+        """
+        sma_value = indicatordata['SMA20'].iloc[i]
+        if pd.isna(sma_value):
+            return False
+        return self.data['Close'].iloc[i] < sma_value
+    
+    def is_entry_condition(self, indicatordata: pd.DataFrame, i: int) -> bool:
+        """
+        Return True if any of the entry conditions are met.
+        (Using OR logic for increased sensitivity.)
+        """
+        return (
+            self.macd_buy_signal(indicatordata, i) or
+            self.rsi_buy_signal(indicatordata, i) or
+            self.bollinger_buy_signal(indicatordata, i) or
+            self.atr_buy_signal(indicatordata, i) or
+            self.parkinsons_buy_signal(indicatordata, i) or
+            self.extra_buy_filter(indicatordata, i)
+        )
+    
+    def process_bars(self, indicatordata: pd.DataFrame) -> Tuple[List[Tuple[pd.Timestamp, float]], List[Tuple[pd.Timestamp, float]]]:
+        """
+        Process each bar sequentially (as in real time).
+        When not in a trade, check for an entry condition.
+        When in a trade, on each new bar, check if an exit condition is met—
+        either by your indicator-based sell signals OR if the current price hits the stop loss or take profit.
+        """
+        buy_coords = []
+        sell_coords = []
+        in_trade = False
+        entry_index = None
+        entry_price = None
+
+        for i in range(1, len(indicatordata['MACD_buy_signal'])):
+            current_time = self.data.index[i]
+            if not self.is_market_open(current_time):
+                continue
+
+            # If not in a trade, check for entry.
+            if not in_trade:
+                if self.is_entry_condition(indicatordata, i):
+                    entry_index = i
+                    entry_price = self.data['Close'].iloc[i]
+                    print(f"Buy signal at {current_time}: Price={entry_price:.2f}")
+                    buy_coords.append((current_time, entry_price))
+                    in_trade = True
+            else:
+                # In a trade, calculate stop loss and take profit based on entry.
+                atr_value = indicatordata['ATR'].iloc[entry_index]
+                stop_loss = self.calculate_stop_loss(entry_price, atr_value, multiplier=1.5)
+                take_profit = self.calculate_take_profit(entry_price, atr_value, multiplier=2.0)
+                current_price = self.data['Close'].iloc[i]
+
+                # Check indicator-based exit
+                indicator_exit = (self.macd_sell_signal(indicatordata, i) or
+                                  self.rsi_sell_signal(indicatordata, i) or
+                                  self.bollinger_sell_signal(indicatordata, i) or
+                                  self.extra_sell_filter(indicatordata, i))
+                
+                if indicator_exit or (current_price <= stop_loss) or (current_price >= take_profit):
+                    print(f"Exit signal at {current_time}: Price={current_price:.2f}")
+                    sell_coords.append((current_time, current_price))
+                    in_trade = False  # Exit the trade
+
+            # Optionally, if market close is reached and you're in a trade, force exit.
+            if in_trade and current_time == self.get_last_market_close_index():
+                forced_exit_price = self.data['Close'].iloc[i]
+                print(f"Forced exit at market close {current_time}: Price={forced_exit_price:.2f}")
+                sell_coords.append((current_time, forced_exit_price))
+                in_trade = False
+
+        return buy_coords, sell_coords
     def is_market_open(self: 'Bot', dt_utc: datetime) -> bool:
         """
         Check if a UTC datetime is within U.S. market hours (9:30-16:00 ET).
@@ -117,7 +296,6 @@ class Bot:
         return market_times[-1] if market_times else None
 
     def calculate_indicators(self: 'Bot') -> Dict[str, Any]:
-
         indicatordata = {}
         rsi = RSIIndicator(pd.Series(self.data['Close'].values.flatten())).rsi()
         indicatordata['RSI'] = rsi
@@ -155,49 +333,19 @@ class Bot:
 
 
         indicatordata['MACD_buy_signal'] = indicatordata['MACD'] >= indicatordata['MACD_signal']
-        indicatordata['signal'] = [0] * len(indicatordata['MACD_buy_signal'])   
+        indicatordata['signal'] = [0] * len(indicatordata['MACD_buy_signal']) 
 
-        buy_coords = []
-        sell_coords = []
-        found_buy = False
-        found_sell = False
-        # Retrieve the index of the index where the timestamp is 20:59 for pre and post market
-        market_close_index = self.get_last_market_close_index()
+        # Calculate the 20-day SMA
+        sma_20 = self.data['Close'].rolling(window=20).mean()
+        # Create a new column for the 20-day SMA
+        indicatordata['SMA20'] = sma_20
 
-        for i in range(1, len(indicatordata['MACD_buy_signal'])):
-            index_datetime = self.data.index[i]
-            if not self.is_market_open(index_datetime):
-                continue
-
-            # Buy signal: all conditions must be met.
-            if (self.macd_buy_signal(indicatordata, i) and 
-                self.rsi_buy_signal(indicatordata, i) and 
-                self.bollinger_buy_signal(indicatordata, i) and 
-                self.atr_buy_signal(indicatordata, i) and 
-                self.parkinsons_buy_signal(indicatordata, i) and 
-                not found_buy and not found_sell):
-                buy_coords.append((self.data.index[i], self.data['Close'].iloc[i]))
-                found_buy = True
-
-            # Sell signal: here you might want to check if the price is near the upper Bollinger band.
-            if (self.macd_sell_signal(indicatordata, i) and 
-                self.rsi_sell_signal(indicatordata, i) and 
-                self.bollinger_sell_signal(indicatordata, i) and 
-                found_buy and not found_sell):
-                sell_coords.append((self.data.index[i], self.data['Close'].iloc[i]))
-                found_sell = True
-
-            if found_buy and found_sell:
-                break
-
-            # If there was a buy but no sell, force a sell at the last market timestamp.
-            if self.data.index[i] == market_close_index and not found_sell and found_buy:
-                sell_coords.append((self.data.index[i], self.data['Close'].iloc[i]))
-                found_sell = True
+        buy_coords, sell_coords = self.process_bars(indicatordata)
                 
-
         indicatordata['buy_coords'] = buy_coords
         indicatordata['sell_coords'] = sell_coords
+
+
         
         return indicatordata
     
@@ -248,56 +396,26 @@ class Bot:
         plt.tight_layout()
         plt.savefig('stockgraphs/' + ticker + '_graph.png', dpi=300)
 
-class SimulatedBot:
-    def __init__(self: 'SimulatedBot', ticker: str, balance: float = 1000.0) -> None:
-        self.ticker: str = ticker
-        self.balance: float = balance
-        self.position: Dict[str, Any] = {}  # empty dict means no open position
-        self.trade_log: List[Dict[str, Any]] = []
-
-    def is_market_open(self) -> bool:
-        # Check if the market is open for the datetime we started running the bot
-        return True
-    
-    def run(self) -> None:
-        # Check if the market is open for the datetime we started running the bot
-        while self.is_market_open():
-            # Create bot instance
-            bot = Bot(self.ticker)
-            # Use the most recent index (latest minute data)
-            i = len(bot.data) - 1
-            current_time = bot.data.index[i]
-            current_price = bot.data['Close'].iloc[i]
-            indicatordata = bot.indicatordata
-
-            # Check if the indicatordata has buy coords
-            if 'buy_coords' in indicatordata:
-                buy_coords = indicatordata['buy_coords']
-                # If there is a buy coord,
-                if len(buy_coords) > 1:
-                    # Buy at the first buy coord
-                    buy_time = buy_coords[0][0]
-                    buy_price = buy_coords[0][1]
-                    self.position['buy_time'] = buy_time
-                    self.position['buy_price'] = buy_price
-                    self.position['quantity'] = self.balance / buy_price
-                    
-    
-        
+    def backtest(self: 'Bot', ticker: str) -> None:
+        # Get the trade signals from your Bot's calculated indicators.
+        buy_coords = self.indicatordata.get("buy_coords", [])
+        sell_coords = self.indicatordata.get("sell_coords", [])
 
 def evaluate_trades():
     # Read the NASDAQ symbols from a CSV file.
     nasdaq_df = pd.read_csv("nasdaq.csv")
     # Randomaly sample 200 symbols from the NASDAQ symbols
-    symbols = nasdaq_df["Symbol"].sample(n=600).tolist()
-    
-    trade_results = []  # List to store trade details for each symbol
+    # symbols = nasdaq_df["Symbol"].sample(n=30).tolist()
+    # Get top movers
+    symbols = TopMovers(40).symbols
+    trade_results = []   # List to store trade details for each symbol
     
     for symbol in symbols:
         try:
             # Instantiate your Bot (using pre_post=True if desired)
-            bot = Bot(symbol, pre_post=True)
-            
+            bot = Bot(symbol, pre_post=True, start_date="2025-02-28", end_date="2025-02-28")
+            # Plot the graph
+            bot.plot_graphs(symbol)
             # Get the trade signals from your Bot's calculated indicators.
             buy_coords = bot.indicatordata.get("buy_coords", [])
             sell_coords = bot.indicatordata.get("sell_coords", [])
@@ -377,20 +495,145 @@ def generate_performance_stats(trade_df: pd.DataFrame) -> pd.DataFrame:
     
     return stats_df
 
-if __name__ == "__main__":
-    # First, evaluate trades for all symbols and save the trade summary.
-    trade_summary_df = evaluate_trades()
+def export_detailed_summary_csv(all_results: dict, filename: str = 'detailed_backtest_summary.csv') -> None:
+    """
+    Export a detailed summary of trades from the backtest results to a CSV file.
+    Each row represents an individual trade.
+    """
+    rows = []
+    for symbol, data in all_results.items():
+        trades = data.get('trades', [])
+        if trades:
+            for trade in trades:
+                rows.append({
+                    'Symbol': symbol,
+                    'Date': trade.get('date'),
+                    'Buy Price': trade.get('buy_price'),
+                    'Sell Price': trade.get('sell_price'),
+                    'Profit': trade.get('profit'),
+                    'Profit (%)': trade.get('profit_percent')
+                })
+        else:
+            rows.append({
+                'Symbol': symbol,
+                'Date': None,
+                'Buy Price': None,
+                'Sell Price': None,
+                'Profit': None,
+                'Profit (%)': None
+            })
+    summary_df = pd.DataFrame(rows)
+    summary_df.to_csv(filename, index=False)
+    print(f"Detailed trade summary saved to {filename}")
+
+def export_overall_performance_csv(overall_stats: dict, filename: str = 'overall_performance_summary.csv') -> None:
+    """
+    Export the overall performance statistics of the strategy to a CSV file.
+    """
+    overall_df = pd.DataFrame([overall_stats])
+    overall_df.to_csv(filename, index=False)
+    print(f"Overall performance summary saved to {filename}")
+
+def backtest(symbols: list, start_date: str, end_date: str) -> Tuple[dict, dict]:
+    """
+    Backtest the trading strategy across multiple symbols between start_date and end_date.
+    Returns:
+        Tuple containing:
+          - all_results: A dictionary with detailed trade results per symbol.
+          - overall_stats: A dictionary with aggregated performance metrics.
+    """
+    # Generate list of business days (B) between the dates.
+    date_range = pd.date_range(start=start_date, end=end_date, freq='B')
     
-    # Next, generate performance statistics from the trade summary and save to CSV.
-    performance_stats_df = generate_performance_stats(trade_summary_df)
-# # Test the class
-# if __name__ == "__main__":
+    all_results = {}
+    overall_stats = {
+        'total_trades': 0,
+        'profitable_trades': 0,
+        'total_profit': 0,
+        'best_trade_symbol': '',
+        'best_trade_date': '',
+        'best_trade_profit_percent': 0,
+        'worst_trade_symbol': '',
+        'worst_trade_date': '',
+        'worst_trade_profit_percent': 0
+    }
+    
+    for symbol in symbols:
+        print(f"\nBacktesting {symbol} from {start_date} to {end_date}")
+        results = []
+        total_trades = 0
+        profitable_trades = 0
+        total_profit = 0
+        
+        for i in range(len(date_range) - 1):
+            current_date = date_range[i].strftime('%Y-%m-%d')
+            try:
+                bot = Bot(ticker=symbol, start_date=current_date, end_date=current_date)
+                indicators = bot.calculate_indicators()
+                buy_coords = indicators.get('buy_coords', [])
+                sell_coords = indicators.get('sell_coords', [])
+                
+                if buy_coords and sell_coords:
+                    buy_price = buy_coords[0][1]
+                    sell_price = sell_coords[0][1]
+                    profit = sell_price - buy_price
+                    profit_percent = (profit / buy_price) * 100
+                    
+                    results.append({
+                        'date': current_date,
+                        'buy_price': buy_price,
+                        'sell_price': sell_price,
+                        'profit': profit,
+                        'profit_percent': profit_percent
+                    })
+                    
+                    total_trades += 1
+                    if profit > 0:
+                        profitable_trades += 1
+                    total_profit += profit
+                    
+                    # Update best trade if applicable.
+                    if profit_percent > overall_stats['best_trade_profit_percent']:
+                        overall_stats['best_trade_profit_percent'] = profit_percent
+                        overall_stats['best_trade_symbol'] = symbol
+                        overall_stats['best_trade_date'] = current_date
+                    # Update worst trade if applicable.
+                    if (profit_percent < overall_stats['worst_trade_profit_percent'] or 
+                        overall_stats['worst_trade_profit_percent'] == 0):
+                        overall_stats['worst_trade_profit_percent'] = profit_percent
+                        overall_stats['worst_trade_symbol'] = symbol
+                        overall_stats['worst_trade_date'] = current_date
+                        
+            except Exception as e:
+                print(f"Error backtesting {symbol} for {current_date}: {e}")
+        
+        all_results[symbol] = {
+            'trades': results,
+            'summary': {
+                'total_trades': total_trades,
+                'profitable_trades': profitable_trades,
+                'win_rate (%)': (profitable_trades / total_trades * 100) if total_trades > 0 else 0,
+                'total_profit': total_profit,
+                'average_profit': (total_profit / total_trades) if total_trades > 0 else 0
+            }
+        }
+        
+        overall_stats['total_trades'] += total_trades
+        overall_stats['profitable_trades'] += profitable_trades
+        overall_stats['total_profit'] += total_profit
+    
+    overall_stats['overall_win_rate (%)'] = ((overall_stats['profitable_trades'] / overall_stats['total_trades'] * 100)
+                                             if overall_stats['total_trades'] > 0 else 0)
+    overall_stats['overall_average_profit'] = ((overall_stats['total_profit'] / overall_stats['total_trades'])
+                                               if overall_stats['total_trades'] > 0 else 0)
+    
+    
+    return all_results, overall_stats
 
-#     # top_movers = TopMovers(40).symbols
-#     # print(top_movers)
-#     tickers = ['TRNR', 'OMI', 'ACON', 'BTAI', 'GRRR', 'PRGO', 'PBYI', 'ALHC', 'RMNI','CTM', 'IBRX']
-#     # Test on all the tickers
-#     for ticker in tickers:
-#         bot = Bot(ticker, pre_post=True)
-#         bot.plot_graphs(ticker)
-
+if __name__ == "__main__":
+    # Randomly sample 50 symbols from NASDAQ.
+    nasdaq_df = pd.read_csv("nasdaq.csv")
+    symbols = nasdaq_df["Symbol"].sample(n=50).tolist()
+    all_results, overall_stats = backtest(symbols, "2025-02-01", "2025-03-03")
+    export_detailed_summary_csv(all_results, filename='detailed_backtest_summary.csv')
+    export_overall_performance_csv(overall_stats, filename='overall_performance_summary.csv')

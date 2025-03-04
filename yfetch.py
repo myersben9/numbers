@@ -3,17 +3,27 @@ from constants import Constants
 from chartparse import ChartParse
 from typing import Dict, Optional, List, Any, Tuple
 import pandas as pd
-
+from datetime import datetime
+import pytz
+import traceback
 class Yfetch:
     def __init__(self, 
                  symbol: str, 
-                 range: str = "5m", 
-                 interval: Optional[str] = None,
-                 pre_post: bool = False):
+                 period: Optional[str] = None,
+                 interval: Optional[str] = '1m',
+                 pre_post: bool = False,
+                 start_date: str = None,
+                 end_date: str = None,
+                 timezone: str = 'America/Los_Angeles',
+                 str_format: str = '%H:%M'):
         self.symbol = symbol
-        self.range = range
+        self.period = period
         self.pre_post = pre_post
         self.interval = interval
+        self.start_date = start_date
+        self.end_date = end_date
+        self.str_format = str_format
+        self.timezone = timezone
         self._news = None
 
     def _get_request(self, 
@@ -44,72 +54,64 @@ class Yfetch:
         """Construct the URL for fetching chart data."""
         return f"{Constants._BASE_URL}{Constants._endpoints['chart'].format(symbol=self.symbol)}"
 
-    def _build_news_url(self, tab: str) -> str:
-        """Construct the URL for fetching news data based on the specified tab."""
-        return f"{Constants._ROOT_URL_}/xhr/ncp?queryRef={tab}&serviceKey=ncp_fin"
 
-    def _get_news_payload(self, count: int) -> Dict[str, Any]:
-        """Create the payload for the news request."""
-        return {
-            "serviceConfig": {
-                "snippetCount": count,
-                "s": [self.symbol]
-            }
-        }
-
-    def _parse_news_response(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Parse the news response and return a list of articles."""
-        news = data.get("data", {}).get("tickerStream", {}).get("stream", [])
-        return [article for article in news if not article.get('ad', [])]
-
-    def get_news(self, 
-                 count: int = 10, 
-                 tab: str = "news") -> List[Dict[str, Any]]:
-        """Fetch news articles specific to the ticker."""
-        if self._news:
-            return self._news
-
-        tab_queryrefs = {
-            "all": "newsAll",
-            "news": "latestNews",
-            "press releases": "pressRelease",
-        }
-
-        query_ref = tab_queryrefs.get(tab.lower())
-        if not query_ref:
-            raise ValueError(f"Invalid tab name '{tab}'. Choose from: {', '.join(tab_queryrefs.keys())}")
-
-        url = self._build_news_url(query_ref)
-        payload = self._get_news_payload(count)
-
-        data = self._post_request(url, payload)
-        if data is None or "Will be right back" in data.get('text', ''):
-            raise RuntimeError("*** YAHOO! FINANCE IS CURRENTLY DOWN! ***\n"
-                               "Our engineers are working quickly to resolve "
-                               "the issue. Thank you for your patience.")
-
-        self._news = self._parse_news_response(data)
-        return self._news
-
-    def get_chart_dataframe(self) -> pd.DataFrame:
+    def get_chart_dataframe(self) -> pd.DataFrame | Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Fetch chart data and return it as a DataFrame.
         Returns:
             pd.DataFrame: A DataFrame containing the chart data.
+            Tuple[pd.DataFrame, pd.DataFrame]: A tuple containing two DataFrames, one for the regular market and one for the pre and post market.
         """
-        chart_url = self._build_chart_url()
-        params = {
-            'range': self.range,
-            'interval': self.interval,
-            'includePrePost': self.pre_post
-        }
-        response = self._get_request(chart_url, params)
-        chart_parse = ChartParse(response)
-        return chart_parse.get_dataframe()
+        # Must have start,end, and interval, or just period and interval
+        try: 
+            chart_url = self._build_chart_url()
+
+            if (
+                self.start_date and 
+                self.end_date and 
+                self.interval and 
+                not self.period
+            ):
+                chart_url = self._build_chart_url()
+                # Put star tand end date in localized utz to timezone convert to string
+                # Conver date to seconds
+                start_date = int(pd.Timestamp(self.start_date).timestamp())
+                if self.start_date == self.end_date:
+                    # Make sure the end date only goes up to last minute of the start date
+                    end_date = start_date + 86400
+                else:
+                    end_date = int(pd.Timestamp(self.end_date).timestamp())
+                params = {
+                    'period1': start_date,
+                    'period2': end_date,
+                    'interval': self.interval,
+                    'includePrePost': self.pre_post
+                }
+                response = self._get_request(chart_url, params)
+                chart_parse = ChartParse(response, start_date, end_date)
+            elif (
+                self.period and 
+                self.interval and 
+                not self.start_date and 
+                not self.end_date
+            ):
+                
+                params = {
+                    'range': self.period,
+                    'interval': self.interval
+                }
+                response = self._get_request(chart_url, params)
+                chart_parse = ChartParse(response)
+            else:
+                raise ValueError("Invalid parameters")
+            return chart_parse.get_dataframe()
+        except Exception as e:
+            return None
+        
 
 # Example usage
 if __name__ == "__main__":
-    yfetch_instance = Yfetch(symbol="AAPL", range="1d", interval="1m", pre_post=False)
+    yfetch_instance = Yfetch(symbol="AAPL", pre_post=False, start_date="2025-02-28", end_date="2025-02-28", timezone="America/Los_Angeles")
     # Get the dataframe
     df = yfetch_instance.get_chart_dataframe()
     print(df)
