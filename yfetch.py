@@ -1,30 +1,44 @@
 import requests
 from constants import Constants
 from chartparse import ChartParse
-from typing import Dict, Optional, List, Any, Tuple
+from typing import Dict, Optional, Any
 import pandas as pd
-from datetime import datetime
-import pytz
-import traceback
+
 class Yfetch:
+    """
+        Yfetch is a class that fetches data from the Yfinance API.
+        It is used to fetch chart data
+
+        Args:
+            ticker: The ticker symbol of the stock to fetch data for.
+            range: The range of data to fetch.
+            interval: The interval of data to fetch.
+            pre_post: Whether to include pre and post market data.
+            start_date: The start date of the data to fetch.
+            end_date: The end date of the data to fetch.
+            timezone: The timezone of the data to fetch.
+            dataframe: The dataframe to store the data in.
+
+        Returns:
+            A dataframe containing the chart data.
+        """
     def __init__(self, 
-                 symbol: str, 
-                 period: Optional[str] = None,
-                 interval: Optional[str] = '1m',
+                 ticker: str, 
+                 interval: str = "5m",
                  pre_post: bool = False,
-                 start_date: str = None,
-                 end_date: str = None,
                  timezone: str = 'America/Los_Angeles',
-                 str_format: str = '%H:%M'):
-        self.symbol = symbol
-        self.period = period
-        self.pre_post = pre_post
+                 start_date: Optional[str] = None,
+                 end_date: Optional[str] = None,
+                 range: Optional[str] = None):
+
+        self.ticker = ticker
+        self.range = range
         self.interval = interval
+        self.pre_post = pre_post
         self.start_date = start_date
         self.end_date = end_date
-        self.str_format = str_format
         self.timezone = timezone
-        self._news = None
+        self.df = self._get_chart_df()
 
     def _get_request(self, 
                      endpoint: str, 
@@ -38,80 +52,80 @@ class Yfetch:
             print(f"GET request failed: {e}")
             return None
 
-    def _post_request(self, 
-                      endpoint: str, 
-                      data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Perform a POST request to the specified endpoint with given data."""
-        try:
-            response = requests.post(endpoint, headers=Constants._HEADERS, json=data)
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            print(f"POST request failed: {e}")
-            return None
-
     def _build_chart_url(self) -> str:
         """Construct the URL for fetching chart data."""
-        return f"{Constants._BASE_URL}{Constants._endpoints['chart'].format(symbol=self.symbol)}"
+        return f"{Constants._BASE_URL}{Constants._endpoints['chart'].format(ticker=self.ticker)}"
 
-
-    def get_chart_dataframe(self) -> pd.DataFrame | Tuple[pd.DataFrame, pd.DataFrame]:
+    def _get_chart_df(self) -> pd.DataFrame:
         """
-        Fetch chart data and return it as a DataFrame.
-        Returns:
-            pd.DataFrame: A DataFrame containing the chart data.
-            Tuple[pd.DataFrame, pd.DataFrame]: A tuple containing two DataFrames, one for the regular market and one for the pre and post market.
+            Get the chart data as a dataframe.
         """
-        # Must have start,end, and interval, or just period and interval
         try: 
             chart_url = self._build_chart_url()
-
+            params = {
+                'interval': self.interval,
+                'includePrePost': self.pre_post
+            }
             if (
                 self.start_date and 
                 self.end_date and 
-                self.interval and 
-                not self.period
+                not self.range
             ):
-                chart_url = self._build_chart_url()
-                # Put star tand end date in localized utz to timezone convert to string
-                # Conver date to seconds
-                start_date = int(pd.Timestamp(self.start_date).timestamp())
-                if self.start_date == self.end_date:
-                    # Make sure the end date only goes up to last minute of the start date
-                    end_date = start_date + 86400
+                start_date = pd.to_datetime(self.start_date).tz_localize(self.timezone).tz_convert('UTC')
+                end_date = pd.to_datetime(self.end_date).tz_localize(self.timezone).tz_convert('UTC')
+
+                if self.pre_post:
+                    # Pre market start time
+                    start_date = start_date + pd.Timedelta(hours=1)
+                    # Post market end time
+                    end_date = end_date + pd.Timedelta(hours=17)
                 else:
-                    end_date = int(pd.Timestamp(self.end_date).timestamp())
-                params = {
-                    'period1': start_date,
-                    'period2': end_date,
-                    'interval': self.interval,
-                    'includePrePost': self.pre_post
-                }
+                    # Regular Market start time
+                    start_date = start_date + pd.Timedelta(hours=5.5)
+                    # Regular Market end time
+                    end_date = end_date + pd.Timedelta(hours=24)
+
+                # int the timestamps
+                start_date = int(start_date.timestamp())
+                end_date = int(end_date.timestamp())
+
+                if start_date == end_date:
+                    end_date = start_date + 86400
+                elif start_date > end_date:
+                    raise ValueError("Start date must be before end date")
+
+                params['period1'] = start_date
+                params['period2'] = end_date
+
                 response = self._get_request(chart_url, params)
-                chart_parse = ChartParse(response, start_date, end_date)
+                df = ChartParse(response, 
+                                self.timezone, 
+                                start_date, 
+                                end_date,
+                                self.pre_post).df
             elif (
-                self.period and 
-                self.interval and 
+                self.range and 
                 not self.start_date and 
                 not self.end_date
             ):
-                
-                params = {
-                    'range': self.period,
-                    'interval': self.interval
-                }
+                params['range'] = self.range   
                 response = self._get_request(chart_url, params)
-                chart_parse = ChartParse(response)
+                df = ChartParse(response, 
+                                self.timezone, 
+                                pre_post=self.pre_post).df
             else:
+                print(self.start_date, self.end_date, self.range)
                 raise ValueError("Invalid parameters")
-            return chart_parse.get_dataframe()
-        except Exception as e:
-            return None
+            return df
+        except:
+            raise ValueError("Invalid parameters or request failed")
         
 
 # Example usage
 if __name__ == "__main__":
-    yfetch_instance = Yfetch(symbol="AAPL", pre_post=False, start_date="2025-02-28", end_date="2025-02-28", timezone="America/Los_Angeles")
-    # Get the dataframe
-    df = yfetch_instance.get_chart_dataframe()
+    df = Yfetch(ticker="AAPL", 
+                start_date="2025-02-21", 
+                end_date="2025-02-21",
+                timezone="America/Los_Angeles",
+                pre_post=True).df
     print(df)

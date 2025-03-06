@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}Trading Bot Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mt-4">Trading Bot Dashboard</h1>
+            <hr>
+        </div>
+    </div>
+    
+    <!-- Bot Status Overview -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Bot Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Ticker</th>
+                                    <th>Strategy</th>
+                                    <th>Status</th>
+                                    <th>Balance</th>
+                                    <th>Last Trade</th>
+                                    <th>P/L Today</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bot in bots %}
+                                <tr>
+                                    <td>{{ bot.name }}</td>
+                                    <td>{{ bot.ticker }}</td>
+                                    <td>{{ bot.strategy }}</td>
+                                    <td>
+                                        {% if bot.active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ "%.2f"|format(bot.initial_balance) }}</td>
+                                    <td>
+                                        {% for summary in performance_summary %}
+                                            {% if summary.bot_name == bot.name and summary.performance %}
+                                                {{ summary.performance.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for summary in performance_summary %}
+                                            {% if summary.bot_name == bot.name and summary.performance %}
+                                                {% if summary.performance.profit_loss > 0 %}
+                                                <span class="text-success">+${{ "%.2f"|format(summary.performance.profit_loss) }}</span>
+                                                {% else %}
+                                                <span class="text-danger">-${{ "%.2f"|format(summary.performance.profit_loss|abs) }}</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% if bot.active %}
+                                        <a href="/bots/stop/{{ bot.id }}" class="btn btn-sm btn-warning">Stop</a>
+                                        {% else %}
+                                        <a href="/bots/start/{{ bot.id }}" class="btn btn-sm btn-success">Start</a>
+                                        {% endif %}
+                                        <a href="/bots/edit/{{ bot.id }}" class="btn btn-sm btn-primary">Edit</a>
+                                        <a href="/bots/delete/{{ bot.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this bot?')">Delete</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Trades -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Trades</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Bot</th>
+                                    <th>Action</th>
+                                    <th>Time</th>
+                                    <th>Price</th>
+                                    <th>P/L</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trade_item in recent_trades %}
+                                <tr>
+                                    <td>{{ trade_item.bot_name }}</td>
+                                    <td>
+                                        {% if trade_item.trade.action == 'BUY' %}
+                                        <span class="badge bg-success">BUY</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">SELL</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ trade_item.trade.timestamp.strftime('%H:%M:%S') }}</td>
+                                    <td>${{ "%.2f"|format(trade_item.trade.price) }}</td>
+                                    <td>
+                                        {% if trade_item.trade.profit_loss %}
+                                            {% if trade_item.trade.profit_loss > 0 %}
+                                            <span class="text-success">+${{ "%.2f"|format(trade_item.trade.profit_loss) }}</span>
+                                            {% else %}
+                                            <span class="text-danger">-${{ "%.2f"|format(trade_item.trade.profit_loss|abs) }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Summary -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Performance Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div id="performance-chart"></div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Win Rate</h6>
+                                    <h2 class="mb-0">
+                                        {% set total_win_rate = 0 %}
+                                        {% set count = 0 %}
+                                        {% for summary in performance_summary %}
+                                            {% if summary.performance %}
+                                                {% set total_win_rate = total_win_rate + summary.performance.win_rate %}
+                                                {% set count = count + 1 %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if count > 0 %}
+                                            {{ "%.1f"|format(total_win_rate / count) }}%
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Total P/L</h6>
+                                    <h2 class="mb-0">
+                                        {% set total_pl = 0 %}
+                                        {% for summary in performance_summary %}
+                                            {% if summary.performance %}
+                                                {% set total_pl = total_pl + summary.performance.profit_loss %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if total_pl > 0 %}
+                                            <span class="text-success">+${{ "%.2f"|format(total_pl) }}</span>
+                                        {% else %}
+                                            <span class="text-danger">-${{ "%.2f"|format(total_pl|abs) }}</span>
+                                        {% endif %}
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize performance chart using data fetched via AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    // For each active bot, fetch performance data and create a chart
+    {% for bot in active_bots %}
+    fetch('/api/bot/{{ bot.id }}/performance/daily')
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                createPerformanceChart(data, '{{ bot.name }}');
+            }
+        });
+    {% endfor %}
+});
+
+function createPerformanceChart(performanceData, botName) {
+    const dates = performanceData.map(item => item.date);
+    const balances = performanceData.map(item => item.balance);
+    
+    const trace = {
+        x: dates,
+        y: balances,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: botName,
+        line: {
+            color: getRandomColor(),
+            width: 2
+        }
+    };
+    
+    const layout = {
+        title: 'Bot Performance',
+        xaxis: {
+            title: 'Date'
+        },
+        yaxis: {
+            title: 'Balance ($)'
+        },
+        height: 300,
+        margin: {
+            l: 40,
+            r: 20,
+            t: 30,
+            b: 40
+        }
+    };
+    
+    Plotly.newPlot('performance-chart', [trace], layout);
+}
+
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+</script>
+{% endblock %}

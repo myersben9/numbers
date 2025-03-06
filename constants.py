@@ -8,6 +8,6 @@ class Constants:
     _BASE_URL = 'https://query1.finance.yahoo.com'
     _ROOT_URL_ = 'https://finance.yahoo.com'
     _endpoints = {
-    'chart': '/v8/finance/chart/{symbol}',
+    'chart': '/v8/finance/chart/{ticker}',
     'news': '/v6/finance/news',
     }
