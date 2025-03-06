@@ -27,9 +27,9 @@ class Yfetch:
                  interval: str = "5m",
                  pre_post: bool = False,
                  timezone: str = 'America/Los_Angeles',
-                 start_date: Optional[str] = None,
-                 end_date: Optional[str] = None,
-                 range: Optional[str] = None):
+                 start_date: str = None,
+                 end_date: str = None,
+                 range: str = None):
 
         self.ticker = ticker
         self.range = range
@@ -114,7 +114,7 @@ class Yfetch:
                                 self.timezone, 
                                 pre_post=self.pre_post).df
             else:
-                print(self.start_date, self.end_date, self.range)
+                print(params)
                 raise ValueError("Invalid parameters")
             return df
         except:

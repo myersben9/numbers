@@ -1,7 +1,6 @@
 import yfinance
-from typing import List, Dict, Union
-import json
-import pandas as pd
+from typing import List
+
 
 # Configuration constants
 PERCENTAGE_CHANGE: float = 15
@@ -51,11 +50,13 @@ class TopMovers:
 
             return screen
 
-        except Exception as e:
-            print(f"Error fetching stocks: {e}")
-            return []
+        except:
+            raise Exception("Error fetching stocks")
 
 # Example usage
 if __name__ == "__main__":
-    top_movers = TopMovers(PERCENTAGE_CHANGE)
-    print(top_movers.symbols)
+    try:
+        top_movers = TopMovers(PERCENTAGE_CHANGE)
+        print(top_movers.symbols)
+    except Exception as e:
+        print(e)

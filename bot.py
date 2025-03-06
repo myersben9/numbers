@@ -1,6 +1,7 @@
 from yfetch import Yfetch
 from movers import TopMovers
 from signals import Signal
+from measures import Measures
 from matplotlib.dates import DateFormatter
 from datetime import time, datetime
 
@@ -20,12 +21,13 @@ from typing import Dict, List, Tuple, Any
 class Bot:
     def __init__(self: 'Bot', 
                  ticker: str, 
-                 range: str = "1d",
                  interval: str = "5m",
                  pre_post: bool = False,
+                 range: str = None,
                  start_date: str = None,
                  end_date: str = None,
                  time_zone: str = 'America/Los_Angeles') -> None:
+        
         self.ticker: str = ticker # type: str
         self.range: str = range # type: str
         self.interval: str = interval # type: str
@@ -35,7 +37,7 @@ class Bot:
         self.time_zone: str = time_zone # type: str
         self.data: pd.DataFrame = self._fetch_df() # type: pd.DataFrame 
         self.indicatordata: Dict[str, Any] = self._calculate_indicators() # type: Dict[str, Any] | None
-
+        
     def _fetch_df(self: 'Bot') -> pd.DataFrame:
         # Get the data from yfinance
         df = Yfetch(self.ticker, 
@@ -43,10 +45,14 @@ class Bot:
                     pre_post = self.pre_post,
                     start_date = self.start_date,
                     end_date = self.end_date,
+                    range = self.range,
                     timezone = self.time_zone).df
         return df
     
     def _calculate_indicators(self: 'Bot') -> Dict[str, Any]:
+        """
+            Calculate the indicators for the data.
+        """
         indicatordata = {}
         rsi = RSIIndicator(pd.Series(self.data['Close'].values.flatten())).rsi()
         indicatordata['RSI'] = rsi
@@ -63,11 +69,12 @@ class Bot:
         indicatordata['Bollinger_hband'] = bollinger.bollinger_hband()
         indicatordata['Bollinger_lband'] = bollinger.bollinger_lband()
         indicatordata['Bollinger_mavg'] = bollinger.bollinger_mavg()
-        indicatordata['Parkinsons_Volatility'] = self.parkinsons_volatility(
+        indicatordata['Parkinsons_Volatility'] = Measures._get_parkinsons_volatility(
             pd.Series(self.data['High'].values.flatten()), 
             pd.Series(self.data['Low'].values.flatten()), 
             window=20
         )
+
 
         # Check if there are atleast 14 rows in the dataframe
         if len(self.data) < 14:
@@ -80,11 +87,9 @@ class Bot:
                 window=14,
                 fillna=False
         ).average_true_range()
+            
         # Volume Indicators
-
-
         indicatordata['MACD_buy_signal'] = indicatordata['MACD'] >= indicatordata['MACD_signal']
-        indicatordata['signal'] = [0] * len(indicatordata['MACD_buy_signal']) 
 
         # Calculate the 20-day SMA
         sma_20 = self.data['Close'].rolling(window=20).mean()
@@ -98,7 +103,7 @@ class Bot:
 
         return indicatordata
 
-    def process_bars(self, indicatordata: pd.DataFrame) -> Tuple[List[Tuple[pd.Timestamp, float]], List[Tuple[pd.Timestamp, float]]]:
+    def process_bars(self, indicatordata: Dict[str, Any]) -> Tuple[List[Tuple[pd.Timestamp, float]], List[Tuple[pd.Timestamp, float]]]:
         """
             Process each bar sequentially (as in real time).
             When not in a trade, check for an entry condition.
@@ -114,11 +119,22 @@ class Bot:
         signal = Signal(self.data, indicatordata)
 
         for i in range(1, len(indicatordata['MACD_buy_signal'])):
-            current_time = self.data.index[i]
+
+            current_time : pd.Timestamp = self.data.index[i]
+
             if not self.is_market_open(current_time):
                 continue
 
-            # If not in a trade, check for entry.
+            buy_coords_len = len(buy_coords)
+            sell_coords_len = len(sell_coords)
+
+            # If there are already a buy and a sell in a single day, break the loop
+            if sell_coords_len > 0:
+                last_sell_date : pd.Timestamp = sell_coords[-1][0]
+
+            if buy_coords_len > 0 and sell_coords_len > 0 and last_sell_date.date() == current_time.date():
+                continue
+            
             if not in_trade:
                 if signal.is_entry_condition(i):
                     entry_index = i
@@ -126,23 +142,12 @@ class Bot:
                     buy_coords.append((current_time, entry_price))
                     in_trade = True
             else:
-                # In a trade, calculate stop loss and take profit based on entry.
-                atr_value = indicatordata['ATR'].iloc[entry_index]
-                stop_loss = signal._get_stop_loss(entry_price, atr_value, multiplier=1.5)
-                take_profit = signal._get_take_profit(entry_price, atr_value, multiplier=2.0)
-                current_price = self.data['Close'].iloc[i]
-
-                # Check indicator-based exit
-                indicator_exit = (signal._get_macd_sell_signal(i) or
-                                  signal._get_rsi_sell_signal(i) or
-                                  signal._get_bollinger_sell_signal(i) or
-                                  signal._get_extra_sell_filter(i))
+                indicator_exit = signal.is_exit_condition(i)    
                 
-                if indicator_exit or (current_price <= stop_loss) or (current_price >= take_profit):
-                    sell_coords.append((current_time, current_price))
-                    in_trade = False  # Exit the trade
+                if indicator_exit:
+                    sell_coords.append((current_time, self.data['Close'].iloc[i]))
+                    in_trade = False
 
-            # Optionally, if market close is reached and you're in a trade, force exit.
             if in_trade and current_time == self._get_last_market_close_index():
                 forced_exit_price = self.data['Close'].iloc[i]
                 sell_coords.append((current_time, forced_exit_price))
@@ -152,19 +157,25 @@ class Bot:
     
     def is_market_open(self: 'Bot', dt: datetime) -> bool:
         """
-        Check if a UTC datetime is within U.S. market hours for UTC time.
+            Check if a UTC datetime is within U.S. market hours for UTC time.
         """
         dt_utc = pd.Timestamp(dt).tz_convert('UTC')
-        market_open = time(14, 30)
-        market_close = time(21, 0)
+
+        # Market open and close times in UTC regular trading Not including high liquidity times 
+        market_open = time(15, 30)
+        market_close = time(20, 30)
         return market_open <= dt_utc.time() <= market_close
     
     def _get_last_market_close_index(self: 'Bot') -> datetime:
         market_times = [t for t in self.data.index if self.is_market_open(t)]
         return market_times[-1] if market_times else None
     
-    def plot_graphs(self: 'Bot', ticker: str) -> None:
+    def plot_graphs(self: 'Bot') -> None:
         # Create subplots with a shared x-axis.
+        # Exit if there are no buy or sell signals
+        if len(self.indicatordata['buy_coords']) == 0 or len(self.indicatordata['sell_coords']) == 0:
+            return
+        ticker = self.ticker
         fig, axs = plt.subplots(5, 1, figsize=(9, 10), sharex=True)
         axs: List[Axes] = axs
 
@@ -210,7 +221,10 @@ class Bot:
 
 
 if __name__ == "__main__":
-    bot = Bot(ticker="AAPL", pre_post=False, range="1d", interval="5m")
-    bot.plot_graphs("AAPL")
+    # Get the top 10 movers
+    movers = TopMovers(percentage_change=50).symbols
+    for ticker in movers:
+        bot = Bot(ticker=ticker, pre_post=True, range="2d", interval="5m")
+        bot.plot_graphs()
 
 
