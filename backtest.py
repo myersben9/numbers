@@ -114,10 +114,18 @@ class Backtest:
 
 if __name__ == "__main__":
     # Get the top 10 movers
-    top_movers = TopMovers(30).symbols
-    backtest = Backtest(tickers=top_movers, 
+    tickers = [
+        "AAPL",
+        "TSLA",
+        "NVDA",
+        "MSFT",
+        "GOOG",
+        "AMZN",
+        "GOOG",
+    ]
+    backtest = Backtest(tickers=tickers, 
                         position=10000,
-                        share_size = len(top_movers) / 100,
+                        share_size = len(tickers) / 100,
                         interval="5m",
                         start_date="2025-02-05",
                         end_date="2025-03-05")

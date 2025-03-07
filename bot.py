@@ -1,14 +1,15 @@
 from yfetch import Yfetch
 from movers import TopMovers
-from signals import Signal
 from measures import Measures
+
+from signals import Signal
 from matplotlib.dates import DateFormatter
 from datetime import time, datetime
-
-from ta.trend import MACD
-from ta.momentum import RSIIndicator
-from ta.volatility import BollingerBands
-from ta.volatility import AverageTrueRange
+import ta
+from ta.trend import MACD, IchimokuIndicator, ADXIndicator, EMAIndicator, PSARIndicator
+from ta.momentum import RSIIndicator, StochasticOscillator
+from ta.volatility import BollingerBands, AverageTrueRange
+from ta.volume import OnBalanceVolumeIndicator, VolumeWeightedAveragePrice, ChaikinMoneyFlowIndicator
 
 import pandas as pd
 import numpy as np
@@ -23,11 +24,10 @@ class Bot:
                  ticker: str, 
                  interval: str = "5m",
                  pre_post: bool = False,
-                 range: str = None,
                  start_date: str = None,
+                 range: str = None,
                  end_date: str = None,
                  time_zone: str = 'America/Los_Angeles') -> None:
-        
         self.ticker: str = ticker # type: str
         self.range: str = range # type: str
         self.interval: str = interval # type: str
@@ -37,7 +37,7 @@ class Bot:
         self.time_zone: str = time_zone # type: str
         self.data: pd.DataFrame = self._fetch_df() # type: pd.DataFrame 
         self.indicatordata: Dict[str, Any] = self._calculate_indicators() # type: Dict[str, Any] | None
-        
+
     def _fetch_df(self: 'Bot') -> pd.DataFrame:
         # Get the data from yfinance
         df = Yfetch(self.ticker, 
@@ -53,132 +53,89 @@ class Bot:
         """
             Calculate the indicators for the data.
         """
-        indicatordata = {}
-        rsi = RSIIndicator(pd.Series(self.data['Close'].values.flatten())).rsi()
-        indicatordata['RSI'] = rsi
+        try:
+            indicatordata = {}
+            close_prices = pd.Series(self.data['Close'].values.flatten())
+            high_prices = pd.Series(self.data['High'].values.flatten())
+            low_prices = pd.Series(self.data['Low'].values.flatten())
+            volume = pd.Series(self.data['Volume'].values.flatten())
 
-        # Trend Indicators
-        macd = MACD(pd.Series(self.data['Close'].values.flatten())).macd()
-        indicatordata['MACD'] = macd
-        macd_signal = MACD(pd.Series(self.data['Close'].values.flatten())).macd_signal()
-        indicatordata['MACD_signal'] = macd_signal
-        close_prices = pd.Series(self.data['Close'].values.flatten())
+            # If there are less than 14 rows in the dataframe, return None
+            if len(self.data) < 14:
+                raise Exception("Not enough data to calculate indicators")
 
-        # Volatility Indicators
-        bollinger = BollingerBands(close_prices, window=20, window_dev=2)
-        indicatordata['Bollinger_hband'] = bollinger.bollinger_hband()
-        indicatordata['Bollinger_lband'] = bollinger.bollinger_lband()
-        indicatordata['Bollinger_mavg'] = bollinger.bollinger_mavg()
-        indicatordata['Parkinsons_Volatility'] = Measures._get_parkinsons_volatility(
-            pd.Series(self.data['High'].values.flatten()), 
-            pd.Series(self.data['Low'].values.flatten()), 
-            window=20
-        )
+            # Momentum Indicators
+            rsi = RSIIndicator(close_prices).rsi()
+            indicatordata['RSI'] = rsi
 
+            # Stochastic Oscillator
+            stochastic = StochasticOscillator(high_prices,
+                                                    low_prices, 
+                                                    close_prices, 
+                                                    window=14, 
+                                                    smooth_window=3, 
+                                                    fillna=False)
+            indicatordata['Stochastic_K'] = stochastic.stoch()
+            indicatordata['Stochastic_D'] = stochastic.stoch_signal()
+        
 
-        # Check if there are atleast 14 rows in the dataframe
-        if len(self.data) < 14:
-            indicatordata['ATR'] = pd.Series(np.nan, index=self.data.index)
-        else:
-            indicatordata['ATR'] = AverageTrueRange(
-                high=pd.Series(self.data['High'].values.flatten()), 
-                low=pd.Series(self.data['Low'].values.flatten()), 
-                close=pd.Series(self.data['Close'].values.flatten()),
-                window=14,
-                fillna=False
-        ).average_true_range()
-            
-        # Volume Indicators
-        indicatordata['MACD_buy_signal'] = indicatordata['MACD'] >= indicatordata['MACD_signal']
+            # Trend Indicators
+            indicatordata['MACD'] = MACD(close_prices).macd()
+            indicatordata['MACD_signal'] = MACD(close_prices).macd_signal()
+            indicatordata['MACD_buy_signal'] = indicatordata['MACD'] >= indicatordata['MACD_signal']
 
-        # Calculate the 20-day SMA
-        sma_20 = self.data['Close'].rolling(window=20).mean()
-        # Create a new column for the 20-day SMA
-        indicatordata['SMA20'] = sma_20
+            # Volatility Indicators
+            bollinger = BollingerBands(close_prices, window=20, window_dev=2)
+            indicatordata['Bollinger_hband'] = bollinger.bollinger_hband()
+            indicatordata['Bollinger_lband'] = bollinger.bollinger_lband()
+            indicatordata['Bollinger_mavg'] = bollinger.bollinger_mavg()
+            indicatordata['Parkinsons_Volatility'] = Measures._get_parkinsons_volatility(
+                pd.Series(self.data['High'].values.flatten()), 
+                pd.Series(self.data['Low'].values.flatten()), 
+                window=20
+            )
 
-        buy_coords, sell_coords = self.process_bars(indicatordata)
-                
-        indicatordata['buy_coords'] = buy_coords
-        indicatordata['sell_coords'] = sell_coords
+            buy_coords, sell_coords = self.process_bars(indicatordata)
+                    
+            indicatordata['buy_coords'] = buy_coords
+            indicatordata['sell_coords'] = sell_coords
 
-        return indicatordata
+            return indicatordata
+        
+        except Exception as e:
+            print(e)
+            return None
 
-    def process_bars(self, indicatordata: Dict[str, Any]) -> Tuple[List[Tuple[pd.Timestamp, float]], List[Tuple[pd.Timestamp, float]]]:
-        """
-            Process each bar sequentially (as in real time).
-            When not in a trade, check for an entry condition.
-            When in a trade, on each new bar, check if an exit condition is met—
-            either by your indicator-based sell signals OR if the current price hits the stop loss or take profit.
-        """
-        buy_coords = []
-        sell_coords = []
-        in_trade = False
-        entry_index = None
-        entry_price = None
+    def process_bars(self, indicatordata: pd.DataFrame) -> Tuple[List[Tuple[pd.Timestamp, float]], List[Tuple[pd.Timestamp, float]]]:
+            """
+                Process each bar sequentially (as in real time).
+                When not in a trade, check for an entry condition.
+                When in a trade, on each new bar, check if an exit condition is met—
+                either by your indicator-based sell signals OR if the current price hits the stop loss or take profit.
+            """
+            buy_coords = []
+            sell_coords = []
 
-        signal = Signal(self.data, indicatordata)
+            signal = Signal(self.data, indicatordata)
 
-        for i in range(1, len(indicatordata['MACD_buy_signal'])):
+            for i in range(1, len(indicatordata['MACD_buy_signal'])):
 
-            current_time : pd.Timestamp = self.data.index[i]
+                current_time = self.data.index[i]
+                current_price = self.data['Close'].iloc[i]
 
-            if not self.is_market_open(current_time):
-                continue
+                if not len(buy_coords) > 0 and signal.is_entry_condition(i, self.interval):
+                    buy_coords.append((current_time, current_price))
 
-            buy_coords_len = len(buy_coords)
-            sell_coords_len = len(sell_coords)
+                if len(buy_coords) > 0 and signal.is_exit_condition(i, self.interval):
+                    sell_coords.append((current_time, current_price))
 
-            # If there are already a buy and a sell in a single day, break the loop
-            if sell_coords_len > 0:
-                last_sell_date : pd.Timestamp = sell_coords[-1][0]
+            return buy_coords, sell_coords
 
-            if buy_coords_len > 0 and sell_coords_len > 0 and last_sell_date.date() == current_time.date():
-                continue
-            
-            if not in_trade:
-                if signal.is_entry_condition(i):
-                    entry_index = i
-                    entry_price = self.data['Close'].iloc[i]
-                    buy_coords.append((current_time, entry_price))
-                    in_trade = True
-            else:
-                indicator_exit = signal.is_exit_condition(i)    
-                
-                if indicator_exit:
-                    sell_coords.append((current_time, self.data['Close'].iloc[i]))
-                    in_trade = False
-
-            if in_trade and current_time == self._get_last_market_close_index():
-                forced_exit_price = self.data['Close'].iloc[i]
-                sell_coords.append((current_time, forced_exit_price))
-                in_trade = False
-
-        return buy_coords, sell_coords
     
-    def is_market_open(self: 'Bot', dt: datetime) -> bool:
-        """
-            Check if a UTC datetime is within U.S. market hours for UTC time.
-        """
-        dt_utc = pd.Timestamp(dt).tz_convert('UTC')
-
-        # Market open and close times in UTC regular trading Not including high liquidity times 
-        market_open = time(15, 30)
-        market_close = time(20, 30)
-        return market_open <= dt_utc.time() <= market_close
-    
-    def _get_last_market_close_index(self: 'Bot') -> datetime:
-        market_times = [t for t in self.data.index if self.is_market_open(t)]
-        return market_times[-1] if market_times else None
-    
-    def plot_graphs(self: 'Bot') -> None:
+    def plot_graphs(self: 'Bot', ticker: str) -> None:
         # Create subplots with a shared x-axis.
-        # Exit if there are no buy or sell signals
-        if len(self.indicatordata['buy_coords']) == 0 or len(self.indicatordata['sell_coords']) == 0:
-            return
-        ticker = self.ticker
-        fig, axs = plt.subplots(5, 1, figsize=(9, 10), sharex=True)
+        fig, axs = plt.subplots(4, 1, figsize=(9, 10), sharex=True)
         axs: List[Axes] = axs
-
         axs[0].set_title(f'{ticker} Chart')
         axs[0].plot(self.data.index, self.data['Close'], label='Price', color='blue')
         for coord in self.indicatordata['buy_coords']:
@@ -189,7 +146,7 @@ class Bot:
         axs[0].plot(self.data.index, self.indicatordata['Bollinger_lband'], label='Bollinger_lband', color='red', linestyle='--')
         axs[0].plot(self.data.index, self.indicatordata['Bollinger_mavg'], label='Bollinger_mavg', color='grey', linestyle='-.')
         axs[0].fill_between(self.data.index, self.indicatordata['Bollinger_hband'], self.indicatordata['Bollinger_lband'], color='grey', alpha=0.2)
-
+        
         # Subplot 1: RSI
         axs[1].plot(self.data.index, self.indicatordata['RSI'], label='RSI', color='purple')
         axs[1].legend()
@@ -200,13 +157,13 @@ class Bot:
         axs[2].legend()
 
         # Subplot 3: ATR
-        axs[3].plot(self.data.index, self.indicatordata['ATR'], label='ATR', color='purple')
-        axs[3].legend()
+        # axs[3].plot(self.data.index, self.indicatordata['ATR'], label='ATR', color='purple')
+        # axs[3].legend()
 
         # Subplot 4: Parkinson's Volatility
-        axs[4].plot(self.data.index, self.indicatordata['Parkinsons_Volatility'], label="Parkinson's Volatility", color='orange')
-        axs[4].legend()
-        axs[4].set_xlabel('Time')
+        axs[3].plot(self.data.index, self.indicatordata['Parkinsons_Volatility'], label="Parkinson's Volatility", color='orange')
+        axs[3].legend()
+        axs[3].set_xlabel('Time')
 
         # Create a DateFormatter that shows only hours and minutes.
         time_formatter = DateFormatter("%H:%M", tz=pytz.timezone(self.time_zone))
@@ -219,12 +176,11 @@ class Bot:
         plt.savefig('stockgraphs/' + ticker + '_graph.png', dpi=300)
 
 
-
 if __name__ == "__main__":
-    # Get the top 10 movers
-    movers = TopMovers(percentage_change=50).symbols
-    for ticker in movers:
-        bot = Bot(ticker=ticker, pre_post=True, range="2d", interval="5m")
-        bot.plot_graphs()
+    topmovers = TopMovers(20).symbols
+    for ticker in topmovers:
+        bot = Bot(ticker=ticker, pre_post=False, range="1d", interval="5m")
+        print(bot.indicatordata)
+        bot.plot_graphs(ticker)
 
 
