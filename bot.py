@@ -24,6 +24,7 @@ class Bot:
                  ticker: str, 
                  interval: str = "5m",
                  pre_post: bool = False,
+                 recent_only: bool = False,
                  start_date: str = None,
                  range: str = None,
                  end_date: str = None,
@@ -32,10 +33,13 @@ class Bot:
         self.range: str = range # type: str
         self.interval: str = interval # type: str
         self.pre_post: bool = pre_post # type: bool
+        self.recent_only: bool = recent_only # type: bool
         self.start_date: str = start_date # type: str
         self.end_date: str = end_date # type: str
         self.time_zone: str = time_zone # type: str
         self.data: pd.DataFrame = self._fetch_df() # type: pd.DataFrame 
+        self.buy_coords: List[Tuple[pd.Timestamp, float]] = [] # type: List[Tuple[pd.Timestamp, float]]
+        self.sell_coords: List[Tuple[pd.Timestamp, float]] = [] # type: List[Tuple[pd.Timestamp, float]]
         self.indicatordata: Dict[str, Any] = self._calculate_indicators() # type: Dict[str, Any] | None
 
     def _fetch_df(self: 'Bot') -> pd.DataFrame:
@@ -100,6 +104,9 @@ class Bot:
             indicatordata['buy_coords'] = buy_coords
             indicatordata['sell_coords'] = sell_coords
 
+            self.buy_coords = buy_coords
+            self.sell_coords = sell_coords
+
             return indicatordata
         
         except Exception as e:
@@ -113,23 +120,30 @@ class Bot:
                 When in a trade, on each new bar, check if an exit condition is met—
                 either by your indicator-based sell signals OR if the current price hits the stop loss or take profit.
             """
-            buy_coords = []
-            sell_coords = []
+            
+            try:
+                signal = Signal(self.data, 
+                                indicatordata, 
+                                self.buy_coords, 
+                                self.sell_coords, 
+                                self.recent_only)
 
-            signal = Signal(self.data, indicatordata)
+                for i in range(1, len(indicatordata['MACD_buy_signal'])):
 
-            for i in range(1, len(indicatordata['MACD_buy_signal'])):
+                    current_time = self.data.index[i]
+                    current_price = self.data['Close'].iloc[i]
 
-                current_time = self.data.index[i]
-                current_price = self.data['Close'].iloc[i]
+                    # Check if there is already a buy signal
+                    if signal.is_entry_condition(i, self.interval):
+                        self.buy_coords.append((current_time, current_price))
 
-                if not len(buy_coords) > 0 and signal.is_entry_condition(i, self.interval):
-                    buy_coords.append((current_time, current_price))
+                    if signal.is_exit_condition(i, self.interval):
+                        self.sell_coords.append((current_time, current_price))
 
-                if len(buy_coords) > 0 and signal.is_exit_condition(i, self.interval):
-                    sell_coords.append((current_time, current_price))
+                return self.buy_coords, self.sell_coords
 
-            return buy_coords, sell_coords
+            except Exception as e:
+                raise Exception(f"Error processing bars: {e}")
 
     
     def plot_graphs(self: 'Bot', ticker: str) -> None:
@@ -138,48 +152,52 @@ class Bot:
         axs: List[Axes] = axs
         axs[0].set_title(f'{ticker} Chart')
         axs[0].plot(self.data.index, self.data['Close'], label='Price', color='blue')
-        for coord in self.indicatordata['buy_coords']:
-            axs[0].scatter(coord[0], coord[1], color='green', marker='^', s=100, label='Buy Signal')
-        for coord in self.indicatordata['sell_coords']:
-            axs[0].scatter(coord[0], coord[1], color='red', marker='v', s=100, label='Sell Signal')
-        axs[0].plot(self.data.index, self.indicatordata['Bollinger_hband'], label='Bollinger_hband', color='green', linestyle='--')
-        axs[0].plot(self.data.index, self.indicatordata['Bollinger_lband'], label='Bollinger_lband', color='red', linestyle='--')
-        axs[0].plot(self.data.index, self.indicatordata['Bollinger_mavg'], label='Bollinger_mavg', color='grey', linestyle='-.')
-        axs[0].fill_between(self.data.index, self.indicatordata['Bollinger_hband'], self.indicatordata['Bollinger_lband'], color='grey', alpha=0.2)
-        
-        # Subplot 1: RSI
-        axs[1].plot(self.data.index, self.indicatordata['RSI'], label='RSI', color='purple')
-        axs[1].legend()
 
-        # Subplot 2: MACD
-        axs[2].plot(self.data.index, self.indicatordata['MACD'], label='MACD', color='blue')
-        axs[2].plot(self.data.index, self.indicatordata['MACD_signal'], label='MACD_signal', color='orange')
-        axs[2].legend()
+        try:
+            for coord in self.indicatordata['buy_coords']:
+                axs[0].scatter(coord[0], coord[1], color='green', marker='^', s=100, label='Buy Signal')
+            for coord in self.indicatordata['sell_coords']:
+                axs[0].scatter(coord[0], coord[1], color='red', marker='v', s=100, label='Sell Signal')
+            axs[0].plot(self.data.index, self.indicatordata['Bollinger_hband'], label='Bollinger_hband', color='green', linestyle='--')
+            axs[0].plot(self.data.index, self.indicatordata['Bollinger_lband'], label='Bollinger_lband', color='red', linestyle='--')
+            axs[0].plot(self.data.index, self.indicatordata['Bollinger_mavg'], label='Bollinger_mavg', color='grey', linestyle='-.')
+            axs[0].fill_between(self.data.index, self.indicatordata['Bollinger_hband'], self.indicatordata['Bollinger_lband'], color='grey', alpha=0.2)
+            
+            # Subplot 1: RSI
+            axs[1].plot(self.data.index, self.indicatordata['RSI'], label='RSI', color='purple')
+            axs[1].legend()
 
-        # Subplot 3: ATR
-        # axs[3].plot(self.data.index, self.indicatordata['ATR'], label='ATR', color='purple')
-        # axs[3].legend()
+            # Subplot 2: MACD
+            axs[2].plot(self.data.index, self.indicatordata['MACD'], label='MACD', color='blue')
+            axs[2].plot(self.data.index, self.indicatordata['MACD_signal'], label='MACD_signal', color='orange')
+            axs[2].legend()
 
-        # Subplot 4: Parkinson's Volatility
-        axs[3].plot(self.data.index, self.indicatordata['Parkinsons_Volatility'], label="Parkinson's Volatility", color='orange')
-        axs[3].legend()
-        axs[3].set_xlabel('Time')
+            # Subplot 3: ATR
+            # axs[3].plot(self.data.index, self.indicatordata['ATR'], label='ATR', color='purple')
+            # axs[3].legend()
 
-        # Create a DateFormatter that shows only hours and minutes.
-        time_formatter = DateFormatter("%H:%M", tz=pytz.timezone(self.time_zone))
-        # Apply the formatter to the shared x-axis by setting it on the last subplot.
-        axs[-1].xaxis.set_major_formatter(time_formatter)
-        # Auto-format the x-axis tick labels for better readability.
-        fig.autofmt_xdate(rotation=45)
+            # Subplot 4: Parkinson's Volatility
+            axs[3].plot(self.data.index, self.indicatordata['Parkinsons_Volatility'], label="Parkinson's Volatility", color='orange')
+            axs[3].legend()
+            axs[3].set_xlabel('Time')
 
-        plt.tight_layout()
-        plt.savefig('stockgraphs/' + ticker + '_graph.png', dpi=300)
+            # Create a DateFormatter that shows only hours and minutes.
+            time_formatter = DateFormatter("%H:%M", tz=pytz.timezone(self.time_zone))
+            # Apply the formatter to the shared x-axis by setting it on the last subplot.
+            axs[-1].xaxis.set_major_formatter(time_formatter)
+            # Auto-format the x-axis tick labels for better readability.
+            fig.autofmt_xdate(rotation=45)
 
+            plt.tight_layout()
+            plt.savefig('stockgraphs/' + ticker + '_graph.png', dpi=300)
+
+        except Exception as e:
+            print(e)
 
 if __name__ == "__main__":
-    topmovers = TopMovers(20).symbols
+    topmovers = TopMovers(50).symbols
     for ticker in topmovers:
-        bot = Bot(ticker=ticker, pre_post=False, range="1d", interval="5m")
+        bot = Bot(ticker=ticker, pre_post=True, range="1d", interval="1m", recent_only=True)
         print(bot.indicatordata)
         bot.plot_graphs(ticker)
 

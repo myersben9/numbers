@@ -1,18 +1,20 @@
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, Union
-from datetime import datetime, time, timedelta
+from typing import Dict, Any, Union, List, Tuple
+from datetime import datetime, time, timedelta, timezone
 class Signal:
     def __init__(self, 
                  data: pd.DataFrame, 
                  indicatordata: Dict[str, Union[pd.Series, pd.DataFrame, Any]],
-                 atr_multiplier: float = 1.5,
-                 base_tolerance: float = 0.15) -> None: 
+                 buy_coords: List[Tuple[pd.Timestamp, float]],
+                 sell_coords: List[Tuple[pd.Timestamp, float]],
+                 recent_only: bool = False) -> None: 
         self.data = data
         self.indicatordata = indicatordata
-        self.atr_multiplier = atr_multiplier
-        self.base_tolerance = base_tolerance
-    
+        self.buy_coords = buy_coords
+        self.sell_coords = sell_coords
+        self.recent_only = recent_only
+
     def rsi_buy_signal(self, i: int) -> bool: 
         if self.indicatordata['RSI'][i] < 40:
             return True
@@ -24,36 +26,29 @@ class Signal:
     
     # Write a function that returns true or false
     def macd_buy_signal(self, i: int) -> bool:
-        # First check if the the macd signal and macd are both less than 0.01
-        if self.indicatordata['MACD_signal'][i] < 0 and self.indicatordata['MACD'][i] < 0:
-            if self.indicatordata['MACD_buy_signal'][i] == True and self.indicatordata['MACD_buy_signal'][i-1] == False:
-                return True
+
+        if self.indicatordata['MACD_buy_signal'][i] == True and self.indicatordata['MACD_buy_signal'][i-1] == False:
+            return True
         return False
             
     def macd_sell_signal(self, i: int) -> bool:
         # First check if there was already a buy signal at or before this index
         if self.indicatordata['MACD_buy_signal'][i] == False and self.indicatordata['MACD_buy_signal'][i-1] == True:
-            # Check if there is a buy signal at or before this index
             return True
         return False
     
-    def is_low_volatility(self, i: int) -> bool:
+    def _is_daily_enter(self, i: int) -> List[Tuple[pd.Timestamp, float]]:
         """
-        Get the Bollinger Band width and ATR
+        Function to check if there is already a buy signal at or before this index on the same day
+        Returns True if there is a buy signal at or before this index on the same day
         """
-        bb_width = (self.indicatordata['Bollinger_hband'].iloc[i] - self.indicatordata['Bollinger_lband'].iloc[i]) / self.data['Close'].iloc[i]
-        print(bb_width)
-        if bb_width < 0.009:
-            return True
-        return False
-
-    def is_high_volatility(self, i: int) -> bool:
-        """
-        Get the Bollinger Band width and ATR
-        """
-        bb_width = (self.indicatordata['Bollinger_hband'].iloc[i] - self.indicatordata['Bollinger_lband'].iloc[i]) / self.data['Close'].iloc[i]    
-        # print(bb_width)
-        if bb_width > 0.1:
+        # Get the date of the current index
+        # Type index as datetime
+        current_date : datetime = self.data.index[i]
+        # Get the buy coordinates for the current date
+        buy_coords = [coord for coord in self.buy_coords if coord[0].date() == current_date.date()]
+        # Return the buy coordinates
+        if len(buy_coords) > 0:
             return True
         return False
 
@@ -61,17 +56,25 @@ class Signal:
         """
         Return True if multiple high-quality entry conditions are met.
         """
+
+        # Check if there is already a buy signal
+        if self._is_daily_enter(i):
+            return False
+
+        # Check if the current time is recent only
+        if self._is_recent_only(i):
+            return False
+
         signals = [
             self.rsi_buy_signal(i),
             self.macd_buy_signal(i)
         ]
 
         conditions = [
-            self.is_low_volatility(i),
             self.is_market_open(i, interval),
+            self._is_daily_enter(i)
         ]
-        print(signals, conditions)
-        if sum(signals) > 0 and sum(conditions) > 1:
+        if sum(signals) > 0 and sum(conditions) > 0:
             return True
         return False
     
@@ -123,17 +126,54 @@ class Signal:
             return True
         return False
     
+    def _is_recent_only(self, i: int) -> bool:
+        """
+        Return True if the current time minus 30 minutes is greater than the current time
+        """
+        current_time : datetime = self.data.index[i]
+
+        # Subtract 30 minutes from the current time
+        thirty_minutes_ago : datetime = current_time - timedelta(minutes=30)
+
+        if self.recent_only:
+            if thirty_minutes_ago < datetime.now(timezone.utc):
+                return True
+        return False
+    
+    def _is_daily_exit(self, i: int) -> bool:
+        """
+        Function to check if there is already a sell signal at or before this index on the same day
+        Returns True if there is a sell signal at or before this index on the same day
+        """
+        # Get the date of the current index
+        current_date : datetime = self.data.index[i]
+        # Get the sell coordinates for the current date
+        sell_coords = [coord for coord in self.sell_coords if coord[0].date() == current_date.date()]
+        # Return the sell coordinates
+        if len(sell_coords) > 0:
+            return True
+        return False
+    
     def is_exit_condition(self, i: int, interval: str) -> bool:
         """
             Improved exit condition with multiple factors
         """
+        # Check if there is already a sell signal
+
+        # Check if we are already in a trade
+
+        if self._is_daily_enter(i):
+            return False
+
+        if self._is_daily_exit(i):
+            return False
+
         signals = [
             self._get_take_profit_signal(i),
             self._get_stop_loss_signal(i),
         ]
         conditions = [
             self._is_last_daytrade(i, interval),
-            self.is_high_volatility(i)
         ]
         if sum(signals) > 0 or sum(conditions) > 0:
             return True
