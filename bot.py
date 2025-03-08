@@ -10,7 +10,7 @@ from ta.trend import MACD, IchimokuIndicator, ADXIndicator, EMAIndicator, PSARIn
 from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import OnBalanceVolumeIndicator, VolumeWeightedAveragePrice, ChaikinMoneyFlowIndicator
-
+from ta.trend import CCIIndicator
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -77,6 +77,9 @@ class Bot:
                                                     fillna=False)
             indicatordata['Stochastic_K'] = stochastic.stoch()
             indicatordata['Stochastic_D'] = stochastic.stoch_signal()
+        
+            cci = CCIIndicator(high=high_prices, low=low_prices, close=close_prices, window=20)
+            indicatordata['CCI'] = cci.cci()
         
 
             # Trend Indicators
@@ -173,14 +176,11 @@ class Bot:
         fig.autofmt_xdate(rotation=45)
 
         plt.tight_layout()
-        plt.savefig('stockgraphs/' + ticker + '_graph.png', dpi=300)
+        plt.savefig('plots/' + ticker + '_graph.png', dpi=300)
 
 
 if __name__ == "__main__":
-    topmovers = TopMovers(20).symbols
-    for ticker in topmovers:
-        bot = Bot(ticker=ticker, pre_post=False, range="1d", interval="5m")
-        print(bot.indicatordata)
-        bot.plot_graphs(ticker)
+    bot = Bot(ticker="AAPL", pre_post=True, range="1d", interval="5m")
+    bot.plot_graphs("AAPL")
 
 

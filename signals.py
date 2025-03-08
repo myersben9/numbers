@@ -37,25 +37,6 @@ class Signal:
             return True
         return False
     
-    def is_low_volatility(self, i: int) -> bool:
-        """
-        Get the Bollinger Band width and ATR
-        """
-        bb_width = (self.indicatordata['Bollinger_hband'].iloc[i] - self.indicatordata['Bollinger_lband'].iloc[i]) / self.data['Close'].iloc[i]
-        print(bb_width)
-        if bb_width < 0.009:
-            return True
-        return False
-
-    def is_high_volatility(self, i: int) -> bool:
-        """
-        Get the Bollinger Band width and ATR
-        """
-        bb_width = (self.indicatordata['Bollinger_hband'].iloc[i] - self.indicatordata['Bollinger_lband'].iloc[i]) / self.data['Close'].iloc[i]    
-        # print(bb_width)
-        if bb_width > 0.1:
-            return True
-        return False
 
     def is_entry_condition(self, i: int, interval: str) -> bool:
         """
@@ -67,7 +48,6 @@ class Signal:
         ]
 
         conditions = [
-            self.is_low_volatility(i),
             self.is_market_open(i, interval),
         ]
         print(signals, conditions)
@@ -132,8 +112,7 @@ class Signal:
             self._get_stop_loss_signal(i),
         ]
         conditions = [
-            self._is_last_daytrade(i, interval),
-            self.is_high_volatility(i)
+            self._is_last_daytrade(i, interval)
         ]
         if sum(signals) > 0 or sum(conditions) > 0:
             return True
