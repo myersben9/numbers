@@ -38,8 +38,6 @@ class Bot:
         self.end_date: str = end_date # type: str
         self.time_zone: str = time_zone # type: str
         self.data: pd.DataFrame = self._fetch_df() # type: pd.DataFrame 
-        self.buy_coords: List[Tuple[pd.Timestamp, float]] = [] # type: List[Tuple[pd.Timestamp, float]]
-        self.sell_coords: List[Tuple[pd.Timestamp, float]] = [] # type: List[Tuple[pd.Timestamp, float]]
         self.indicatordata: Dict[str, Any] = self._calculate_indicators() # type: Dict[str, Any] | None
 
     def _fetch_df(self: 'Bot') -> pd.DataFrame:
@@ -77,16 +75,14 @@ class Bot:
                                                     low_prices, 
                                                     close_prices, 
                                                     window=14, 
-                                                    smooth_window=3, 
-                                                    fillna=False)
-            indicatordata['Stochastic_K'] = stochastic.stoch()
-            indicatordata['Stochastic_D'] = stochastic.stoch_signal()
+                                                    smooth_window=3)
+            indicatordata['Stoch_K'] = stochastic.stoch()
+            indicatordata['Stoch_D'] = stochastic.stoch_signal()
         
 
             # Trend Indicators
             indicatordata['MACD'] = MACD(close_prices).macd()
             indicatordata['MACD_signal'] = MACD(close_prices).macd_signal()
-            indicatordata['MACD_buy_signal'] = indicatordata['MACD'] >= indicatordata['MACD_signal']
 
             # Volatility Indicators
             bollinger = BollingerBands(close_prices, window=20, window_dev=2)
@@ -99,21 +95,17 @@ class Bot:
                 window=20
             )
 
-            buy_coords, sell_coords = self.process_bars(indicatordata)
-                    
-            indicatordata['buy_coords'] = buy_coords
-            indicatordata['sell_coords'] = sell_coords
-
-            self.buy_coords = buy_coords
-            self.sell_coords = sell_coords
+            # Calculate the ATR
+            atr = AverageTrueRange(high_prices, low_prices, close_prices, window=14).average_true_range()
+            indicatordata['ATR'] = atr
 
             return indicatordata
         
         except Exception as e:
             print(e)
-            return None
+            return 
 
-    def process_bars(self, indicatordata: pd.DataFrame) -> Tuple[List[Tuple[pd.Timestamp, float]], List[Tuple[pd.Timestamp, float]]]:
+    def process_bars(self) -> Tuple[List[Tuple[pd.Timestamp, float]], List[Tuple[pd.Timestamp, float]]]:
             """
                 Process each bar sequentially (as in real time).
                 When not in a trade, check for an entry condition.
@@ -123,24 +115,23 @@ class Bot:
             
             try:
                 signal = Signal(self.data, 
-                                indicatordata, 
-                                self.buy_coords, 
-                                self.sell_coords, 
-                                self.recent_only)
+                                self.indicatordata)
 
-                for i in range(1, len(indicatordata['MACD_buy_signal'])):
-
+                buys = []
+                sells = []
+                for i in range(len(self.data)):
                     current_time = self.data.index[i]
                     current_price = self.data['Close'].iloc[i]
 
-                    # Check if there is already a buy signal
-                    if signal.is_entry_condition(i, self.interval):
-                        self.buy_coords.append((current_time, current_price))
+                    if signal.is_entry_condition(i, self.interval, buys, sells):
+                        buys.append((current_time, current_price))
 
-                    if signal.is_exit_condition(i, self.interval):
-                        self.sell_coords.append((current_time, current_price))
+                    if signal.is_exit_condition(i, self.interval, buys, sells):
+                        sells.append((current_time, current_price))
 
-                return self.buy_coords, self.sell_coords
+                print(buys)
+                print(sells)
+                return buys, sells
 
             except Exception as e:
                 raise Exception(f"Error processing bars: {e}")
@@ -148,15 +139,18 @@ class Bot:
     
     def plot_graphs(self: 'Bot', ticker: str) -> None:
         # Create subplots with a shared x-axis.
-        fig, axs = plt.subplots(4, 1, figsize=(9, 10), sharex=True)
+
+        buys, sells = self.process_bars()
+
+        fig, axs = plt.subplots(5, 1, figsize=(9, 10), sharex=True)
         axs: List[Axes] = axs
         axs[0].set_title(f'{ticker} Chart')
         axs[0].plot(self.data.index, self.data['Close'], label='Price', color='blue')
 
         try:
-            for coord in self.indicatordata['buy_coords']:
+            for coord in buys:
                 axs[0].scatter(coord[0], coord[1], color='green', marker='^', s=100, label='Buy Signal')
-            for coord in self.indicatordata['sell_coords']:
+            for coord in sells:
                 axs[0].scatter(coord[0], coord[1], color='red', marker='v', s=100, label='Sell Signal')
             axs[0].plot(self.data.index, self.indicatordata['Bollinger_hband'], label='Bollinger_hband', color='green', linestyle='--')
             axs[0].plot(self.data.index, self.indicatordata['Bollinger_lband'], label='Bollinger_lband', color='red', linestyle='--')
@@ -181,6 +175,11 @@ class Bot:
             axs[3].legend()
             axs[3].set_xlabel('Time')
 
+            # Plot the stochastic oscillator
+            axs[4].plot(self.data.index, self.indicatordata['Stoch_K'], label='Stochastic_K', color='blue')
+            axs[4].plot(self.data.index, self.indicatordata['Stoch_D'], label='Stochastic_D', color='orange')
+            axs[4].legend()
+
             # Create a DateFormatter that shows only hours and minutes.
             time_formatter = DateFormatter("%H:%M", tz=pytz.timezone(self.time_zone))
             # Apply the formatter to the shared x-axis by setting it on the last subplot.
@@ -192,13 +191,15 @@ class Bot:
             plt.savefig('stockgraphs/' + ticker + '_graph.png', dpi=300)
 
         except Exception as e:
-            print(e)
+            print("Error plotting graphs: ", e)
+            return
 
 if __name__ == "__main__":
-    topmovers = TopMovers(50).symbols
-    for ticker in topmovers:
-        bot = Bot(ticker=ticker, pre_post=True, range="1d", interval="1m", recent_only=True)
-        print(bot.indicatordata)
-        bot.plot_graphs(ticker)
+    ticker = 'NVDA'
+    bot = Bot(ticker=ticker,
+                pre_post=True,
+                range="1d", 
+                interval="5m")
+    bot.plot_graphs(ticker)
 
 

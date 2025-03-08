@@ -5,96 +5,86 @@ from datetime import datetime, time, timedelta, timezone
 class Signal:
     def __init__(self, 
                  data: pd.DataFrame, 
-                 indicatordata: Dict[str, Union[pd.Series, pd.DataFrame, Any]],
-                 buy_coords: List[Tuple[pd.Timestamp, float]],
-                 sell_coords: List[Tuple[pd.Timestamp, float]],
-                 recent_only: bool = False) -> None: 
+                 indicatordata: Dict[str, Union[pd.Series, pd.DataFrame, Any]]) -> None: 
         self.data = data
         self.indicatordata = indicatordata
-        self.buy_coords = buy_coords
-        self.sell_coords = sell_coords
-        self.recent_only = recent_only
 
     def rsi_buy_signal(self, i: int) -> bool: 
-        if self.indicatordata['RSI'][i] < 40:
+        """
+        Adjusted RSI buy condition based on historical profitable trades.
+        """
+        if 38 <= self.indicatordata['RSI'][i] <= 58:
             return True
         return False
-    
-    def rsi_sell_signal(self, i: int) -> bool:
-        if self.indicatordata['RSI'][i] > 70:
-            return True
-    
-    # Write a function that returns true or false
+
     def macd_buy_signal(self, i: int) -> bool:
-
-        if self.indicatordata['MACD_buy_signal'][i] == True and self.indicatordata['MACD_buy_signal'][i-1] == False:
-            return True
-        return False
-            
-    def macd_sell_signal(self, i: int) -> bool:
-        # First check if there was already a buy signal at or before this index
-        if self.indicatordata['MACD_buy_signal'][i] == False and self.indicatordata['MACD_buy_signal'][i-1] == True:
+        """
+        Adjusted MACD buy condition based on statistics.
+        """
+        if self.indicatordata['MACD'][i] > self.indicatordata['MACD_signal'][i] and self.indicatordata['MACD'][i] > -0.1:
             return True
         return False
     
-    def _is_daily_enter(self, i: int) -> List[Tuple[pd.Timestamp, float]]:
+    def atr_buy_signal(self, i: int) -> bool:
         """
-        Function to check if there is already a buy signal at or before this index on the same day
-        Returns True if there is a buy signal at or before this index on the same day
+        ATR-based buy signal to filter low volatility.
         """
-        # Get the date of the current index
-        # Type index as datetime
-        current_date : datetime = self.data.index[i]
-        # Get the buy coordinates for the current date
-        buy_coords = [coord for coord in self.buy_coords if coord[0].date() == current_date.date()]
-        # Return the buy coordinates
-        if len(buy_coords) > 0:
+        if self.indicatordata['ATR'][i] > 0.14:
             return True
         return False
 
-    def is_entry_condition(self, i: int, interval: str) -> bool:
+    def stoch_buy_signal(self, i: int) -> bool:
+        """
+        Stochastic K buy signal.
+        """
+        if 40 <= self.indicatordata['Stoch_K'][i] <= 45:
+            return True
+        return False
+
+    def macd_sell_signal(self, i: int) -> bool:
+        """
+        Adjusted MACD sell condition based on historical profitable trades.
+        """
+        if self.indicatordata['MACD'][i] < self.indicatordata['MACD_signal'][i] and self.indicatordata['MACD'][i] > 0.1:
+            return True
+        return False
+    
+    def _is_in_trade(self, i: int, buys: List[Tuple[pd.Timestamp, float]], sells: List[Tuple[pd.Timestamp, float]]) -> bool:
+        """
+        Returns True if there is an active trade
+        Returns false if there is no active trade
+        """
+        if len(buys) == len(sells) + 1:
+            return True
+        elif len(buys) == len(sells):
+            return False
+        else:
+            raise ValueError("There is an error in the number of buys and sells")
+
+    
+    def is_entry_condition(self, i: int, interval: str, buys: List[Tuple[pd.Timestamp, float]], sells: List[Tuple[pd.Timestamp, float]]) -> bool:
         """
         Return True if multiple high-quality entry conditions are met.
         """
-
-        # Check if there is already a buy signal
-        if self._is_daily_enter(i):
+        if self._is_in_trade(i, buys, sells):
             return False
-
-        # Check if the current time is recent only
-        if self._is_recent_only(i):
-            return False
+        
+        if len(buys) == len(sells) and len(buys) > 0:
+            # Check if the last sell trade was made on the current index's day  
+            if sells[-1][0].date() == self.data.index[i].date():
+                return False
 
         signals = [
             self.rsi_buy_signal(i),
-            self.macd_buy_signal(i)
+            self.macd_buy_signal(i),
+            self.atr_buy_signal(i),
+            self.stoch_buy_signal(i)
         ]
 
-        conditions = [
-            self.is_market_open(i, interval),
-            self._is_daily_enter(i)
-        ]
-        if sum(signals) > 0 and sum(conditions) > 0:
+        if sum(signals) >= 2 and self.is_market_open(i, interval):
             return True
         return False
     
-    def _get_take_profit_signal(self, i: int) -> bool:
-        """
-        Return True if the take profit signal is met.
-        """
-        if self.data['Close'].iloc[i] > self.data['High'].iloc[i-1] * 1.05:
-            return True
-        return False
-    
-    def _get_stop_loss_signal(self, i: int) -> bool:
-        """
-        Return True if the stop loss signal is met.
-        """
-        if self.data['Close'].iloc[i] < self.data['Low'].iloc[i-1] * 0.95:
-            return True
-        return False
-    
-
     def is_market_open(self: 'Signal', i: int, interval: str) -> bool:
         """
         Check if a UTC datetime is within U.S. market hours for UTC time.
@@ -111,7 +101,9 @@ class Signal:
         adjusted_close_dt = market_close_dt - timedelta(minutes=minuteint)
         adjusted_close_time = adjusted_close_dt.time()
         
-        return market_open <= dt_utc.time() <= adjusted_close_time
+        if market_open <= dt_utc.time() <= adjusted_close_time:
+            return True
+        return False
     
     def _get_last_market_close_index(self: 'Signal', i: int, interval: str) -> int:
         # Get the index and check if the market is open
@@ -126,55 +118,16 @@ class Signal:
             return True
         return False
     
-    def _is_recent_only(self, i: int) -> bool:
-        """
-        Return True if the current time minus 30 minutes is greater than the current time
-        """
-        current_time : datetime = self.data.index[i]
-
-        # Subtract 30 minutes from the current time
-        thirty_minutes_ago : datetime = current_time - timedelta(minutes=30)
-
-        if self.recent_only:
-            if thirty_minutes_ago < datetime.now(timezone.utc):
-                return True
-        return False
     
-    def _is_daily_exit(self, i: int) -> bool:
-        """
-        Function to check if there is already a sell signal at or before this index on the same day
-        Returns True if there is a sell signal at or before this index on the same day
-        """
-        # Get the date of the current index
-        current_date : datetime = self.data.index[i]
-        # Get the sell coordinates for the current date
-        sell_coords = [coord for coord in self.sell_coords if coord[0].date() == current_date.date()]
-        # Return the sell coordinates
-        if len(sell_coords) > 0:
-            return True
-        return False
-    
-    def is_exit_condition(self, i: int, interval: str) -> bool:
+    def is_exit_condition(self, i: int, interval: str, buys: List[Tuple[pd.Timestamp, float]], sells: List[Tuple[pd.Timestamp, float]]) -> bool:
         """
             Improved exit condition with multiple factors
         """
-        # Check if there is already a sell signal
-
-        # Check if we are already in a trade
-
-        if self._is_daily_enter(i):
+        # Check if there is already a buy signal
+        if not self._is_in_trade(i, buys, sells):
             return False
 
-        if self._is_daily_exit(i):
-            return False
-
-        signals = [
-            self._get_take_profit_signal(i),
-            self._get_stop_loss_signal(i),
-        ]
-        conditions = [
-            self._is_last_daytrade(i, interval),
-        ]
-        if sum(signals) > 0 or sum(conditions) > 0:
+        if self.macd_sell_signal(i):
             return True
         return False
+

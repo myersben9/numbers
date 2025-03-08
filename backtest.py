@@ -6,16 +6,16 @@ class Backtest:
     def __init__(self: 'Backtest', 
                  tickers: Union[List[str], str] = [],
                  position: float = 10000,
-                 share_size: float = 0.01,
                  interval: str = "5m",
                  range: str = None,
+                 share_size: float = 0.01,
                  start_date: str = None,   
                  end_date: str = None,) -> None:
     
         self.tickers = tickers
         self.position = position
-        self.share_size = share_size
         self.range = range
+        self.share_size = share_size
         self.start_date = start_date
         self.end_date = end_date
         self.interval = interval
@@ -35,14 +35,14 @@ class Backtest:
                   start_date=self.start_date, 
                   end_date=self.end_date)
 
-            buy_coords = bot.indicatordata['buy_coords']
-            sell_coords = bot.indicatordata['sell_coords']
+            buy_coords = bot.process_bars()[0]
+            sell_coords = bot.process_bars()[1]
 
             trades_coords[ticker] = {
                 'buy_coords': buy_coords,
                 'sell_coords': sell_coords
             }
-        position = self.position
+        position = self.position 
         profit = 0
         shares = 0
         trade_count = 0
@@ -114,19 +114,18 @@ class Backtest:
 
 if __name__ == "__main__":
     # Get the top 10 movers
-    tickers = [
-        "AAPL",
-        "TSLA",
+    symbols = [
+        "GOOG",
         "NVDA",
         "MSFT",
-        "GOOG",
         "AMZN",
-        "GOOG",
+        "TSLA",
+        "AAPL",
+        "TSM",
     ]
-    backtest = Backtest(tickers=tickers, 
+    backtest = Backtest(tickers=symbols, 
                         position=10000,
-                        share_size = len(tickers) / 100,
+                        share_size= len(symbols) / 100,
                         interval="5m",
-                        start_date="2025-02-05",
-                        end_date="2025-03-05")
+                        range="20d")
     backtest.backtest()
